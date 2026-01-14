@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Buddy.Core;
 
 /// <summary>
@@ -8,8 +6,8 @@ namespace Buddy.Core;
 /// </summary>
 public sealed class BuddyOptions
 {
-    public string ApiKey { get; init; } = string.Empty;
-    public string Model { get; init; } = "gpt-4o-mini";
-    public string? BaseUrl { get; init; }
-    public string WorkingDirectory { get; init; } = Directory.GetCurrentDirectory();
+    public string ApiKey { get; set; } = string.Empty;
+    public string Model { get; set; } = "gpt-4o-mini";
+    public string? BaseUrl { get; set; }
+    public string WorkingDirectory { get; set; } = Directory.GetCurrentDirectory();
 }
