@@ -1,0 +1,62 @@
+# .NET / Visual Studio / Rider
+# Based on common patterns for SDK-style projects
+
+## Build results
+**/[Bb]in/
+**/[Oo]bj/
+**/[Dd]ebug/
+**/[Rr]elease/
+**/[Xx]64/
+**/[Xx]86/
+**/[Aa]ny[Cc][Pp][Uu]/
+**/[Ll]og/
+**/[Ll]ogs/
+
+## Test results
+**/TestResults/
+
+## NuGet
+*.nupkg
+*.snupkg
+**/packages/
+**/Packages/
+
+## Publish outputs
+**/publish/
+
+## User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.rsuser
+
+## Visual Studio / VS Code / Rider
+.vs/
+.vscode/
+.idea/
+*.sln.iml
+
+## MSBuild / NuGet intermediate files
+*.cache
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Coverage / profiling
+*.coverage
+*.coveragexml
+coverage*
+
+## OS junk
+.DS_Store
+Thumbs.db
+
+## Optional: local env files
+.env
+.env.*
+
+## Repo-specific (generated local outputs)
+/nupkg/
