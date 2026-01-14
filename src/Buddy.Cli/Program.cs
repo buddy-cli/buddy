@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Buddy.Core;
 using Buddy.LLM;
 using DotNetEnv;
@@ -17,6 +18,8 @@ catch (Exception ex) {
 
 var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
 var workingDirectory = Environment.CurrentDirectory;
+var currentDate = DateTimeOffset.Now;
+var osEnvironment = $"{RuntimeInformation.OSDescription} ({RuntimeInformation.OSArchitecture})";
 
 var options = BuddyOptionsLoader.Load(workingDirectory, args);
 var projectInstructions = ProjectInstructionsLoader.Load(workingDirectory);
@@ -31,7 +34,12 @@ AnsiConsole.MarkupLine($"version {version} • working dir [underline]{workingDi
 AnsiConsole.MarkupLine($"model [bold]{options.Model}[/] • base url [grey]{options.BaseUrl ?? "(default)"}[/]");
 AnsiConsole.MarkupLine("Type a message to chat. Use /help for commands.");
 
-const string systemPrompt = "You are buddy, a research-grade coding agent. Be concise, correct, and helpful.";
+var systemPrompt = $@"You are buddy, a research-grade coding agent. 
+Your job is to assist the user with programming tasks. 
+Current date: {currentDate:yyyy-MM-dd}. 
+Current working directory: {workingDirectory}. 
+OS environment: {osEnvironment}. 
+Be concise, correct, and helpful.";
 
 var agent = host.Services.GetRequiredService<BuddyAgent>();
 ILLMClient llmClient = host.Services.GetRequiredService<ILLMClient>();

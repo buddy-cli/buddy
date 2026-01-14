@@ -10,10 +10,8 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton(options);
         services.AddSingleton<IOptions<BuddyOptions>>(_ => Options.Create(options));
 
-        // LLM client (Phase 2): OpenAI-compatible streaming.
         services.AddSingleton<ILLMClient>(_ => new OpenAiLlmClient(options.ApiKey, options.Model, options.BaseUrl));
 
-        // Tools (Phase 4)
         services.AddSingleton<ITool, ReadFileTool>();
         services.AddSingleton<ITool, WriteFileTool>();
         services.AddSingleton<ITool, EditFileTool>();
@@ -21,7 +19,6 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<ITool, RunTerminalTool>();
         services.AddSingleton<ToolRegistry>();
 
-        // Agent loop (Phase 3)
         services.AddSingleton<BuddyAgent>();
 
         return services;
