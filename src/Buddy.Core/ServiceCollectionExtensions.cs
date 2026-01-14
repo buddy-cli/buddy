@@ -5,10 +5,8 @@ using Microsoft.Extensions.Options;
 
 namespace Buddy.Core;
 
-public static class ServiceCollectionExtensions
-{
-    public static IServiceCollection AddBuddyCore(this IServiceCollection services, BuddyOptions options)
-    {
+public static class ServiceCollectionExtensions {
+    public static IServiceCollection AddBuddyCore(this IServiceCollection services, BuddyOptions options) {
         services.AddSingleton(options);
         services.AddSingleton<IOptions<BuddyOptions>>(_ => Options.Create(options));
 

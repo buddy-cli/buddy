@@ -2,31 +2,25 @@
 
 namespace Buddy.Core.Tests;
 
-public sealed class BuddyOptionsLoaderTests
-{
+public sealed class BuddyOptionsLoaderTests {
     [Fact]
-    public void Loads_from_environment_variables()
-    {
+    public void Loads_from_environment_variables() {
         var original = Environment.GetEnvironmentVariable("BUDDY_MODEL");
-        try
-        {
+        try {
             Environment.SetEnvironmentVariable("BUDDY_MODEL", "env-model");
 
             var opts = BuddyOptionsLoader.Load(Directory.GetCurrentDirectory(), Array.Empty<string>());
             Assert.Equal("env-model", opts.Model);
         }
-        finally
-        {
+        finally {
             Environment.SetEnvironmentVariable("BUDDY_MODEL", original);
         }
     }
 
     [Fact]
-    public void Command_line_overrides_environment()
-    {
+    public void Command_line_overrides_environment() {
         var original = Environment.GetEnvironmentVariable("BUDDY_MODEL");
-        try
-        {
+        try {
             Environment.SetEnvironmentVariable("BUDDY_MODEL", "env-model");
 
             var opts = BuddyOptionsLoader.Load(
@@ -35,8 +29,7 @@ public sealed class BuddyOptionsLoaderTests
 
             Assert.Equal("cli-model", opts.Model);
         }
-        finally
-        {
+        finally {
             Environment.SetEnvironmentVariable("BUDDY_MODEL", original);
         }
     }

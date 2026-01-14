@@ -2,10 +2,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace Buddy.Core;
 
-public static class BuddyOptionsLoader
-{
-    private static readonly Dictionary<string, string> CommandLineSwitchMappings = new(StringComparer.OrdinalIgnoreCase)
-    {
+public static class BuddyOptionsLoader {
+    private static readonly Dictionary<string, string> CommandLineSwitchMappings = new(StringComparer.OrdinalIgnoreCase) {
         ["--api-key"] = "Buddy:ApiKey",
         ["--model"] = "Buddy:Model",
         ["--base-url"] = "Buddy:BaseUrl",
@@ -13,10 +11,8 @@ public static class BuddyOptionsLoader
         ["--working-dir"] = "Buddy:WorkingDirectory"
     };
 
-    public static BuddyOptions Load(string workingDirectory, string[] args)
-    {
-        if (string.IsNullOrWhiteSpace(workingDirectory))
-        {
+    public static BuddyOptions Load(string workingDirectory, string[] args) {
+        if (string.IsNullOrWhiteSpace(workingDirectory)) {
             workingDirectory = Directory.GetCurrentDirectory();
         }
 
@@ -27,8 +23,7 @@ public static class BuddyOptionsLoader
             .AddCommandLine(args, CommandLineSwitchMappings)
             .Build();
 
-        var options = new BuddyOptions
-        {
+        var options = new BuddyOptions {
             WorkingDirectory = workingDirectory
         };
 
@@ -42,8 +37,7 @@ public static class BuddyOptionsLoader
         options.BaseUrl = config["Buddy:BaseUrl"] ?? config["BUDDY_BASE_URL"] ?? options.BaseUrl;
         options.WorkingDirectory = config["Buddy:WorkingDirectory"] ?? config["BUDDY_WORKING_DIRECTORY"] ?? options.WorkingDirectory;
 
-        if (string.IsNullOrWhiteSpace(options.WorkingDirectory))
-        {
+        if (string.IsNullOrWhiteSpace(options.WorkingDirectory)) {
             options.WorkingDirectory = workingDirectory;
         }
 

@@ -5,11 +5,9 @@ using Buddy.LLM;
 
 namespace Buddy.LLM.Tests;
 
-public sealed class OpenAiLlmClientStreamingTests
-{
+public sealed class OpenAiLlmClientStreamingTests {
     [Fact]
-    public async Task Streams_content_deltas_in_order()
-    {
+    public async Task Streams_content_deltas_in_order() {
         var sse = string.Join("\n", new[]
         {
             "data: {\"choices\":[{\"delta\":{\"content\":\"Hel\"}}]}",
@@ -24,8 +22,7 @@ public sealed class OpenAiLlmClientStreamingTests
         var chunks = new List<ChatResponseChunk>();
         await foreach (var chunk in client.GetStreamingResponseAsync(
                            new[] { new Message(MessageRole.User, "hello") },
-                           Array.Empty<ToolDefinition>()))
-        {
+                           Array.Empty<ToolDefinition>())) {
             chunks.Add(chunk);
         }
 
@@ -34,8 +31,7 @@ public sealed class OpenAiLlmClientStreamingTests
     }
 
     [Fact]
-    public async Task Streams_tool_call_argument_fragments()
-    {
+    public async Task Streams_tool_call_argument_fragments() {
         static string DataLine(object obj) => "data: " + JsonSerializer.Serialize(obj);
 
         var sse = string.Join("\n", new[]
@@ -99,10 +95,8 @@ public sealed class OpenAiLlmClientStreamingTests
         var toolDeltas = new List<ToolCallDelta>();
         await foreach (var chunk in client.GetStreamingResponseAsync(
                            new[] { new Message(MessageRole.User, "do it") },
-                           Array.Empty<ToolDefinition>()))
-        {
-            if (chunk.ToolCall is not null)
-            {
+                           Array.Empty<ToolDefinition>())) {
+            if (chunk.ToolCall is not null) {
                 toolDeltas.Add(chunk.ToolCall);
             }
         }
@@ -115,22 +109,18 @@ public sealed class OpenAiLlmClientStreamingTests
         Assert.Equal("{\"path\":\"a\"}", args);
     }
 
-    private sealed class FakeSseHandler : HttpMessageHandler
-    {
+    private sealed class FakeSseHandler : HttpMessageHandler {
         private readonly string _sse;
 
-        public FakeSseHandler(string sse)
-        {
+        public FakeSseHandler(string sse) {
             _sse = sse;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
             var content = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(_sse)));
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/event-stream");
 
-            var response = new HttpResponseMessage(HttpStatusCode.OK)
-            {
+            var response = new HttpResponseMessage(HttpStatusCode.OK) {
                 Content = content
             };
 

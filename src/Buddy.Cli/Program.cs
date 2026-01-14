@@ -7,13 +7,11 @@ using Microsoft.Extensions.Hosting;
 using Spectre.Console;
 
 // Phase 0 scaffold: load .env if present (lowest priority) so users can set API key/model early.
-try
-{
+try {
     // Keep .env as lowest priority: don't overwrite real environment variables.
     Env.NoClobber().TraversePath().Load();
 }
-catch (Exception ex)
-{
+catch (Exception ex) {
     AnsiConsole.MarkupLine($"[red]warning:[/] failed to load .env ({ex.Message})");
 }
 
@@ -40,11 +38,9 @@ ILLMClient llmClient = host.Services.GetRequiredService<ILLMClient>();
 CancellationTokenSource? turnCts = null;
 var exitRequested = false;
 
-Console.CancelKeyPress += (_, e) =>
-{
+Console.CancelKeyPress += (_, e) => {
     // First Ctrl+C cancels the current model request; second Ctrl+C exits.
-    if (turnCts is not null && !turnCts.IsCancellationRequested)
-    {
+    if (turnCts is not null && !turnCts.IsCancellationRequested) {
         e.Cancel = true;
         turnCts.Cancel();
         return;
@@ -54,35 +50,29 @@ Console.CancelKeyPress += (_, e) =>
     e.Cancel = true;
 };
 
-while (!exitRequested)
-{
+while (!exitRequested) {
     string input;
-    try
-    {
+    try {
         input = AnsiConsole.Prompt(
             new TextPrompt<string>("[green]>[/] ")
                 .AllowEmpty()
         ).Trim();
     }
-    catch
-    {
+    catch {
         // If Spectre prompt fails (e.g., canceled), exit cleanly.
         break;
     }
 
-    if (string.IsNullOrWhiteSpace(input))
-    {
+    if (string.IsNullOrWhiteSpace(input)) {
         continue;
     }
 
-    if (input.StartsWith("/", StringComparison.Ordinal))
-    {
+    if (input.StartsWith("/", StringComparison.Ordinal)) {
         var parts = input.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var cmd = parts[0];
         var arg = parts.Length > 1 ? parts[1] : null;
 
-        switch (cmd)
-        {
+        switch (cmd) {
             case "/help":
                 AnsiConsole.MarkupLine("Commands:");
                 AnsiConsole.MarkupLine("  [bold]/help[/]            Show this help");
@@ -97,8 +87,7 @@ while (!exitRequested)
                 continue;
 
             case "/model":
-                if (string.IsNullOrWhiteSpace(arg))
-                {
+                if (string.IsNullOrWhiteSpace(arg)) {
                     AnsiConsole.MarkupLine($"current model [bold]{options.Model}[/]");
                     continue;
                 }
@@ -123,20 +112,17 @@ while (!exitRequested)
     turnCts = new CancellationTokenSource();
 
     AnsiConsole.Markup("[bold]buddy:[/] ");
-    try
-    {
+    try {
         await agent.RunTurnAsync(
             llmClient,
             systemPrompt,
             projectInstructions,
             input,
-            onTextDelta: text =>
-            {
+            onTextDelta: text => {
                 Console.Write(text);
                 return Task.CompletedTask;
             },
-            onToolStatus: status =>
-            {
+            onToolStatus: status => {
                 Console.WriteLine();
                 AnsiConsole.MarkupLine($"[grey]{Markup.Escape(status)}[/]");
                 AnsiConsole.Markup("[bold]buddy:[/] ");
@@ -144,16 +130,13 @@ while (!exitRequested)
             },
             cancellationToken: turnCts.Token);
     }
-    catch (OperationCanceledException)
-    {
+    catch (OperationCanceledException) {
         AnsiConsole.MarkupLine("\n[grey](canceled)[/]");
     }
-    catch (Exception ex)
-    {
+    catch (Exception ex) {
         AnsiConsole.MarkupLine($"\n[red]error:[/] {ex.Message}");
     }
-    finally
-    {
+    finally {
         turnCts.Dispose();
         turnCts = null;
     }

@@ -1,26 +1,20 @@
 namespace Buddy.Core;
 
-public static class ProjectInstructionsLoader
-{
-    public static string? Load(string workingDirectory)
-    {
-        if (string.IsNullOrWhiteSpace(workingDirectory))
-        {
+public static class ProjectInstructionsLoader {
+    public static string? Load(string workingDirectory) {
+        if (string.IsNullOrWhiteSpace(workingDirectory)) {
             workingDirectory = Directory.GetCurrentDirectory();
         }
 
         var dir = new DirectoryInfo(workingDirectory);
-        while (dir is not null)
-        {
+        while (dir is not null) {
             var buddy = Path.Combine(dir.FullName, "BUDDY.md");
-            if (File.Exists(buddy))
-            {
+            if (File.Exists(buddy)) {
                 return SafeReadAllText(buddy);
             }
 
             var agents = Path.Combine(dir.FullName, "AGENTS.md");
-            if (File.Exists(agents))
-            {
+            if (File.Exists(agents)) {
                 return SafeReadAllText(agents);
             }
 
@@ -30,14 +24,11 @@ public static class ProjectInstructionsLoader
         return null;
     }
 
-    private static string SafeReadAllText(string path)
-    {
-        try
-        {
+    private static string SafeReadAllText(string path) {
+        try {
             return File.ReadAllText(path);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             return $"(failed to read {Path.GetFileName(path)}: {ex.Message})";
         }
     }

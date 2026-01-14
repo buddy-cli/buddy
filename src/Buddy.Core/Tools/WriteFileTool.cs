@@ -2,8 +2,7 @@ using System.Text.Json;
 
 namespace Buddy.Core.Tools;
 
-public sealed class WriteFileTool : ITool
-{
+public sealed class WriteFileTool : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -19,8 +18,7 @@ public sealed class WriteFileTool : ITool
 
     private readonly string _workingDirectory;
 
-    public WriteFileTool(BuddyOptions options)
-    {
+    public WriteFileTool(BuddyOptions options) {
         _workingDirectory = options.WorkingDirectory;
     }
 
@@ -28,15 +26,12 @@ public sealed class WriteFileTool : ITool
     public string Description => "Write a file (creating parent directories if needed).";
     public JsonElement ParameterSchema => Schema;
 
-    public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default)
-    {
-        if (!args.TryGetProperty("path", out var pathEl) || pathEl.ValueKind != JsonValueKind.String)
-        {
+    public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {
+        if (!args.TryGetProperty("path", out var pathEl) || pathEl.ValueKind != JsonValueKind.String) {
             return "error: missing required string argument 'path'";
         }
 
-        if (!args.TryGetProperty("content", out var contentEl) || contentEl.ValueKind != JsonValueKind.String)
-        {
+        if (!args.TryGetProperty("content", out var contentEl) || contentEl.ValueKind != JsonValueKind.String) {
             return "error: missing required string argument 'content'";
         }
 
@@ -44,8 +39,7 @@ public sealed class WriteFileTool : ITool
         var content = contentEl.GetString() ?? string.Empty;
 
         var dir = Path.GetDirectoryName(path);
-        if (!string.IsNullOrWhiteSpace(dir))
-        {
+        if (!string.IsNullOrWhiteSpace(dir)) {
             Directory.CreateDirectory(dir);
         }
 

@@ -2,8 +2,7 @@ using System.Text.Json;
 
 namespace Buddy.Core.Tools;
 
-public sealed class ReadFileTool : ITool
-{
+public sealed class ReadFileTool : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -18,8 +17,7 @@ public sealed class ReadFileTool : ITool
 
     private readonly string _workingDirectory;
 
-    public ReadFileTool(BuddyOptions options)
-    {
+    public ReadFileTool(BuddyOptions options) {
         _workingDirectory = options.WorkingDirectory;
     }
 
@@ -27,17 +25,14 @@ public sealed class ReadFileTool : ITool
     public string Description => "Read a file and return its contents.";
     public JsonElement ParameterSchema => Schema;
 
-    public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default)
-    {
-        if (!args.TryGetProperty("path", out var pathEl) || pathEl.ValueKind != JsonValueKind.String)
-        {
+    public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {
+        if (!args.TryGetProperty("path", out var pathEl) || pathEl.ValueKind != JsonValueKind.String) {
             return "error: missing required string argument 'path'";
         }
 
         var path = PathResolver.Resolve(_workingDirectory, pathEl.GetString()!);
 
-        if (!File.Exists(path))
-        {
+        if (!File.Exists(path)) {
             return $"error: file not found: {path}";
         }
 
