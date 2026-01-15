@@ -112,6 +112,7 @@ while (!exitRequested) {
 
     turnCts = new CancellationTokenSource();
 
+    Console.WriteLine();
     AnsiConsole.Markup("[bold]buddy:[/] ");
     try {
         await agent.RunTurnAsync(
