@@ -28,6 +28,16 @@ internal sealed class ConsoleTextEditor {
 
         while (true) {
             var key = Console.ReadKey(intercept: true);
+            
+            // Handle CSI u (extended keyboard protocol) sequences from terminals like Ghostty
+            // These start with ESC [ and need special parsing
+            if (key.Key == ConsoleKey.Escape && Console.KeyAvailable) {
+                var parsed = TryParseCsiSequence();
+                if (parsed.HasValue) {
+                    key = parsed.Value;
+                }
+            }
+            
             if (HandleKey(key, out var shouldSubmit)) {
                 if (shouldSubmit) {
                     _renderer.End();
@@ -38,6 +48,80 @@ internal sealed class ConsoleTextEditor {
             }
         }
     }
+    
+    /// <summary>
+    /// Tries to parse a CSI sequence (ESC [ ... ) from terminals using extended keyboard protocols.
+    /// Returns a synthesized ConsoleKeyInfo if successful, null otherwise.
+    /// </summary>
+    private ConsoleKeyInfo? TryParseCsiSequence() {
+        // We've already read ESC, now check for [
+        if (!Console.KeyAvailable) return null;
+        
+        var next = Console.ReadKey(intercept: true);
+        if (next.KeyChar != '[') {
+            // Not a CSI sequence - this was just Escape followed by something else
+            // We can't "unread" so we'll lose this key, but it's rare
+            return null;
+        }
+        
+        // Read until we get a terminator (letter or ~)
+        var sequence = new StringBuilder();
+        while (Console.KeyAvailable) {
+            var ch = Console.ReadKey(intercept: true);
+            if (char.IsLetter(ch.KeyChar) || ch.KeyChar == '~') {
+                sequence.Append(ch.KeyChar);
+                break;
+            }
+            sequence.Append(ch.KeyChar);
+        }
+        
+        var seq = sequence.ToString();
+        
+        // Parse CSI u format: <keycode>;<modifiers>;<text>~ or <keycode>;<modifiers>u
+        // For Enter in Ghostty: "27;2;13~" where 13 is CR
+        var parts = seq.TrimEnd('~', 'u').Split(';');
+        
+        if (parts.Length >= 1) {
+            // Try to extract the keycode - it might be in different positions
+            // depending on the sequence format
+            int keyCode = 0;
+            ConsoleModifiers modifiers = ConsoleModifiers.None;
+            
+            if (parts.Length >= 3 && int.TryParse(parts[2], out var textCode)) {
+                // CSI <keycode> ; <modifiers> ; <text> ~ format
+                keyCode = textCode;
+                if (int.TryParse(parts[1], out var mod)) {
+                    modifiers = ParseCsiModifiers(mod);
+                }
+            } else if (parts.Length >= 1 && int.TryParse(parts[0], out var code)) {
+                keyCode = code;
+                if (parts.Length >= 2 && int.TryParse(parts[1], out var mod)) {
+                    modifiers = ParseCsiModifiers(mod);
+                }
+            }
+            
+            // Convert keycode to ConsoleKeyInfo
+            if (keyCode == 13) { // CR - Enter
+                return new ConsoleKeyInfo('\r', ConsoleKey.Enter, 
+                    modifiers.HasFlag(ConsoleModifiers.Shift),
+                    modifiers.HasFlag(ConsoleModifiers.Alt),
+                    modifiers.HasFlag(ConsoleModifiers.Control));
+            }
+        }
+        
+        return null;
+    }
+    
+    private static ConsoleModifiers ParseCsiModifiers(int mod) {
+        // CSI u modifier encoding: 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0) + (meta ? 8 : 0)
+        // So mod=2 means shift (1 + 1)
+        var modifiers = ConsoleModifiers.None;
+        mod -= 1; // Remove the base 1
+        if ((mod & 1) != 0) modifiers |= ConsoleModifiers.Shift;
+        if ((mod & 2) != 0) modifiers |= ConsoleModifiers.Alt;
+        if ((mod & 4) != 0) modifiers |= ConsoleModifiers.Control;
+        return modifiers;
+    }
 
     private bool HandleKey(ConsoleKeyInfo key, out bool submit) {
         submit = false;
@@ -46,8 +130,11 @@ internal sealed class ConsoleTextEditor {
             ResetAutocomplete();
         }
 
-        if (key.Key == ConsoleKey.Enter) {
-            if ((key.Modifiers & ConsoleModifiers.Control) != 0 || (key.Modifiers & ConsoleModifiers.Shift) != 0 || key.KeyChar == '\\') {
+        // Handle Enter key - check both Key property and KeyChar for terminal compatibility
+        // Some terminals may not set ConsoleKey.Enter but will have '\r' or '\n' as KeyChar
+        var isEnter = key.Key == ConsoleKey.Enter || key.KeyChar == '\r' || key.KeyChar == '\n';
+        if (isEnter) {
+            if ((key.Modifiers & ConsoleModifiers.Control) != 0 || (key.Modifiers & ConsoleModifiers.Shift) != 0) {
                 InsertNewline();
                 return true;
             }
@@ -359,9 +446,15 @@ internal sealed class ConsoleTextEditor {
     private sealed class ConsoleTextRenderer {
         private readonly string _promptMarkup;
         private readonly string _promptPlain;
-        private int _originTop;
         private int _renderedLines = 1;
         private bool _started;
+
+        // ANSI escape sequences
+        private const string Esc = "\x1b";
+        private const string EraseLine = Esc + "[2K";     // Erase entire line
+        private const string CursorUp = Esc + "[A";       // Move cursor up
+        
+        private static string CursorToColumn(int col) => $"{Esc}[{col + 1}G";
 
         public ConsoleTextRenderer(string promptMarkup, string promptPlain) {
             _promptMarkup = promptMarkup;
@@ -372,15 +465,15 @@ internal sealed class ConsoleTextEditor {
             if (_started) {
                 return;
             }
-
-            _originTop = Console.CursorTop;
             _started = true;
         }
 
         public void End() {
-            // Move cursor to end of last rendered line and print newline
-            Console.SetCursorPosition(0, _originTop + _renderedLines - 1);
+            // After rendering, cursor could be anywhere in our rendered content.
+            // Move to column 0 and write a newline to start fresh
+            Console.Write('\r');
             Console.WriteLine();
+            
             _started = false;
             _renderedLines = 1;
         }
@@ -392,51 +485,37 @@ internal sealed class ConsoleTextEditor {
 
             var lines = text.Replace("\r", string.Empty).Split('\n');
             var newLineCount = lines.Length;
+            var maxLines = Math.Max(_renderedLines, newLineCount);
 
-            // Check if we need more lines than before and might scroll
-            if (newLineCount > _renderedLines) {
-                // Position at end and write new lines to make space
-                Console.SetCursorPosition(0, _originTop + _renderedLines - 1);
-                for (var i = _renderedLines; i < newLineCount; i++) {
-                    Console.WriteLine();
-                }
-                // Adjust origin if console scrolled
-                var expectedBottom = _originTop + newLineCount - 1;
-                if (expectedBottom >= Console.BufferHeight) {
-                    _originTop -= (expectedBottom - Console.BufferHeight + 1);
-                    if (_originTop < 0) _originTop = 0;
-                }
+            // Move cursor to start of our rendering area (go up to first line)
+            // We need to go up (_renderedLines - 1) lines to get back to the first line
+            // then go to column 0
+            Console.Out.Write("\r"); // Go to column 0
+            for (var i = 0; i < _renderedLines - 1; i++) {
+                Console.Out.Write(CursorUp);
             }
-
-            ClearLines(newLineCount);
-            WriteText(lines);
-            _renderedLines = newLineCount;
-            PositionCursor(lines, cursorIndex);
-        }
-
-        private void ClearLines(int lineCount) {
-            var width = Math.Max(Console.BufferWidth, 1);
-            var clear = new string(' ', Math.Max(0, width - 1));
-
-            // Clear all lines we might have used (max of old and new count)
-            var maxLines = Math.Max(_renderedLines, lineCount);
+            
+            // Now we're at start of first line - clear and rewrite all lines
             for (var i = 0; i < maxLines; i++) {
-                var top = _originTop + i;
-                if (top >= Console.BufferHeight) {
-                    break;
+                Console.Out.Write(EraseLine);
+                Console.Out.Write("\r");
+                
+                if (i < lines.Length) {
+                    Console.Out.Flush();
+                    AnsiConsole.Markup(_promptMarkup);
+                    Console.Out.Write(lines[i]);
                 }
-
-                Console.SetCursorPosition(0, top);
-                Console.Write(clear);
+                
+                // Move to next line (except for last)
+                if (i < maxLines - 1) {
+                    Console.Out.Write("\n");
+                }
             }
-        }
-
-        private void WriteText(string[] lines) {
-            for (var i = 0; i < lines.Length; i++) {
-                Console.SetCursorPosition(0, _originTop + i);
-                AnsiConsole.Markup(_promptMarkup);
-                Console.Write(lines[i]);
-            }
+            
+            _renderedLines = newLineCount;
+            
+            // Position cursor at the correct location
+            PositionCursor(lines, cursorIndex);
         }
 
         private void PositionCursor(string[] lines, int cursorIndex) {
@@ -459,19 +538,18 @@ internal sealed class ConsoleTextEditor {
             }
 
             var column = cursorIndex - lineStart;
-            var left = _promptPlain.Length + column;
-            var top = _originTop + lineIndex;
-
-            if (top >= Console.BufferHeight) {
-                top = Console.BufferHeight - 1;
+            var targetCol = _promptPlain.Length + column;
+            
+            // We're at the last rendered line. Move up to target line.
+            var linesToMoveUp = (lines.Length - 1) - lineIndex;
+            
+            Console.Out.Write("\r");
+            for (var i = 0; i < linesToMoveUp; i++) {
+                Console.Out.Write(CursorUp);
             }
-
-            var maxLeft = Math.Max(Console.BufferWidth - 1, 0);
-            if (left > maxLeft) {
-                left = maxLeft;
-            }
-
-            Console.SetCursorPosition(left, top);
+            
+            Console.Out.Write(CursorToColumn(targetCol));
+            Console.Out.Flush();
         }
     }
 }
