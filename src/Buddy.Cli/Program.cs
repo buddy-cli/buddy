@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Buddy.Cli.Commands;
 using Buddy.Core.Agents;
 using Buddy.Core.Application;
 using Buddy.Core.Configuration;
@@ -51,6 +52,12 @@ ILLMClient llmClient = host.Services.GetRequiredService<ILLMClient>();
 CancellationTokenSource? turnCts = null;
 var exitRequested = false;
 
+var commandRegistry = new SlashCommandRegistry();
+commandRegistry.Register(new SlashCommand("/help", "Show help"));
+commandRegistry.Register(new SlashCommand("/clear", "Clear conversation history"));
+commandRegistry.Register(new SlashCommand("/model", "Switch model", "<name>"));
+commandRegistry.Register(new SlashCommand("/exit", "Exit", Aliases: new[] { "/quit" }));
+
 Console.CancelKeyPress += (_, e) => {
     // First Ctrl+C cancels the current model request; second Ctrl+C exits.
     if (turnCts is not null && !turnCts.IsCancellationRequested) {
@@ -64,7 +71,7 @@ Console.CancelKeyPress += (_, e) => {
 };
 
 while (!exitRequested) {
-    var input = ReadUserInput();
+    var input = ReadUserInput(commandRegistry);
 
     if (string.IsNullOrWhiteSpace(input)) {
         continue;
@@ -149,9 +156,9 @@ while (!exitRequested) {
 
 return 0;
 
-string ReadUserInput() {
+string ReadUserInput(SlashCommandRegistry registry) {
     const string promptPlain = "> ";
     const string promptMarkup = "[green]>[/] ";
-    var editor = new Buddy.Cli.ConsoleTextEditor(promptMarkup, promptPlain);
+    var editor = new Buddy.Cli.ConsoleTextEditor(promptMarkup, promptPlain, registry);
     return editor.ReadInput();
 }

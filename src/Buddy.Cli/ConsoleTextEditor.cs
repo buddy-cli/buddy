@@ -1,4 +1,5 @@
 using System.Text;
+using Buddy.Cli.Commands;
 using Spectre.Console;
 
 namespace Buddy.Cli;
@@ -8,12 +9,17 @@ internal sealed class ConsoleTextEditor {
     private readonly string _promptPlain;
     private readonly TextBuffer _buffer = new();
     private readonly ConsoleTextRenderer _renderer;
+    private readonly SlashCommandRegistry _commandRegistry;
     private int? _preferredColumn;
+    private List<string>? _autocompleteMatches;
+    private int _autocompleteIndex;
+    private int _autocompleteLineStart;
 
-    public ConsoleTextEditor(string promptMarkup, string promptPlain) {
+    public ConsoleTextEditor(string promptMarkup, string promptPlain, SlashCommandRegistry commandRegistry) {
         _promptMarkup = promptMarkup;
         _promptPlain = promptPlain;
         _renderer = new ConsoleTextRenderer(_promptMarkup, _promptPlain);
+        _commandRegistry = commandRegistry;
     }
 
     public string ReadInput() {
@@ -36,6 +42,10 @@ internal sealed class ConsoleTextEditor {
     private bool HandleKey(ConsoleKeyInfo key, out bool submit) {
         submit = false;
 
+        if (key.Key != ConsoleKey.Tab) {
+            ResetAutocomplete();
+        }
+
         if (key.Key == ConsoleKey.Enter) {
             if ((key.Modifiers & ConsoleModifiers.Control) != 0 || (key.Modifiers & ConsoleModifiers.Shift) != 0 || key.KeyChar == '\\') {
                 InsertNewline();
@@ -55,6 +65,10 @@ internal sealed class ConsoleTextEditor {
         if (key.Key == ConsoleKey.J && (key.Modifiers & ConsoleModifiers.Control) != 0) {
             InsertNewline();
             return true;
+        }
+
+        if (key.Key == ConsoleKey.Tab && (key.Modifiers & (ConsoleModifiers.Control | ConsoleModifiers.Shift | ConsoleModifiers.Alt)) == 0) {
+            return TryAutocomplete();
         }
 
         if (key.Key == ConsoleKey.LeftArrow) {
@@ -142,6 +156,62 @@ internal sealed class ConsoleTextEditor {
         return true;
     }
 
+    private void ResetAutocomplete() {
+        _autocompleteMatches = null;
+        _autocompleteIndex = 0;
+        _autocompleteLineStart = 0;
+    }
+
+    private bool TryAutocomplete() {
+        var lineStart = _buffer.GetLineStart(_buffer.CursorIndex);
+
+        if (_autocompleteMatches is not null && _autocompleteMatches.Count > 0 && _autocompleteLineStart == lineStart) {
+            _autocompleteIndex = (_autocompleteIndex + 1) % _autocompleteMatches.Count;
+            ApplyCompletion(lineStart, _autocompleteMatches[_autocompleteIndex]);
+            return true;
+        }
+
+        var lineEnd = _buffer.GetLineEnd(_buffer.CursorIndex);
+        var lineText = _buffer.Text.Substring(lineStart, lineEnd - lineStart);
+        if (!lineText.StartsWith("/", StringComparison.Ordinal)) {
+            return false;
+        }
+
+        var cursorColumn = _buffer.CursorIndex - lineStart;
+        var commandEnd = lineText.IndexOf(' ');
+        if (commandEnd == -1) {
+            commandEnd = lineText.Length;
+        }
+
+        if (cursorColumn > commandEnd) {
+            return false;
+        }
+
+        var prefix = lineText.Substring(0, cursorColumn);
+        var matches = _commandRegistry.GetCompletions(prefix);
+        if (matches.Count == 0) {
+            return false;
+        }
+
+        _autocompleteMatches = matches.ToList();
+        _autocompleteIndex = 0;
+        _autocompleteLineStart = lineStart;
+        ApplyCompletion(lineStart, _autocompleteMatches[_autocompleteIndex]);
+        return true;
+    }
+
+    private void ApplyCompletion(int lineStart, string completion) {
+        var lineEnd = _buffer.GetLineEnd(lineStart);
+        var lineText = _buffer.Text.Substring(lineStart, lineEnd - lineStart);
+        var commandEnd = lineText.IndexOf(' ');
+        if (commandEnd == -1) {
+            commandEnd = lineText.Length;
+        }
+
+        _buffer.ReplaceRange(lineStart, commandEnd, completion);
+        _preferredColumn = null;
+    }
+
     private void InsertNewline() {
         _buffer.Insert('\n');
         _preferredColumn = null;
@@ -216,6 +286,15 @@ internal sealed class ConsoleTextEditor {
 
         public void SetCursor(int index) {
             _cursor = Math.Clamp(index, 0, _buffer.Length);
+        }
+
+        public void ReplaceRange(int start, int length, string text) {
+            start = Math.Clamp(start, 0, _buffer.Length);
+            length = Math.Clamp(length, 0, _buffer.Length - start);
+
+            _buffer.Remove(start, length);
+            _buffer.Insert(start, text);
+            _cursor = start + text.Length;
         }
 
         public List<int> GetLineStarts() {
