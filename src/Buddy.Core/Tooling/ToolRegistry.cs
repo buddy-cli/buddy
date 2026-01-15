@@ -1,7 +1,8 @@
 using System.Text.Json;
+using Buddy.Core.Tools;
 using Buddy.LLM;
 
-namespace Buddy.Core.Tools;
+namespace Buddy.Core.Tooling;
 
 public sealed class ToolRegistry {
     private readonly IReadOnlyList<ITool> _tools;

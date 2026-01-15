@@ -1,7 +1,7 @@
 using System.Text;
 using Buddy.LLM;
 
-namespace Buddy.Core;
+namespace Buddy.Core.Tooling;
 
 internal sealed class ToolCallAccumulator {
     public int Index { get; }

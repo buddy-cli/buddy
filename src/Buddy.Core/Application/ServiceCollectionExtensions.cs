@@ -1,9 +1,12 @@
-using Buddy.LLM;
+using Buddy.Core.Agents;
+using Buddy.Core.Configuration;
+using Buddy.Core.Tooling;
 using Buddy.Core.Tools;
+using Buddy.LLM;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Buddy.Core;
+namespace Buddy.Core.Application;
 
 public static class ServiceCollectionExtensions {
     public static IServiceCollection AddBuddyCore(this IServiceCollection services, BuddyOptions options) {

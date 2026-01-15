@@ -1,6 +1,9 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Buddy.Core;
+using Buddy.Core.Agents;
+using Buddy.Core.Application;
+using Buddy.Core.Configuration;
+using Buddy.Core.Instructions;
 using Buddy.LLM;
 using DotNetEnv;
 using Microsoft.Extensions.DependencyInjection;

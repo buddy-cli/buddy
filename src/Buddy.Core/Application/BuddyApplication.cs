@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Hosting;
 
-namespace Buddy.Core;
+namespace Buddy.Core.Application;
 
 /// <summary>
 /// Entry point for running the buddy agent. For now, this is a placeholder

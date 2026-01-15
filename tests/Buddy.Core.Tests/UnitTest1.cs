@@ -1,4 +1,4 @@
-﻿using Buddy.Core;
+﻿using Buddy.Core.Configuration;
 
 namespace Buddy.Core.Tests;
 

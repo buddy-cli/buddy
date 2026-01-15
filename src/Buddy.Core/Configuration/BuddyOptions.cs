@@ -1,4 +1,4 @@
-namespace Buddy.Core;
+namespace Buddy.Core.Configuration;
 
 /// <summary>
 /// Configuration inputs for the buddy agent.

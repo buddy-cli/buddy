@@ -1,4 +1,4 @@
-namespace Buddy.Core;
+namespace Buddy.Core.Instructions;
 
 public static class ProjectInstructionsLoader {
     public static string? Load(string workingDirectory) {

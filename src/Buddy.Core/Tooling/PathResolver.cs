@@ -1,4 +1,4 @@
-namespace Buddy.Core.Tools;
+namespace Buddy.Core.Tooling;
 
 internal static class PathResolver {
     public static string Resolve(string workingDirectory, string path) {

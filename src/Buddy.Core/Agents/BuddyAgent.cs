@@ -1,8 +1,8 @@
 using System.Text;
-using Buddy.Core.Tools;
+using Buddy.Core.Tooling;
 using Buddy.LLM;
 
-namespace Buddy.Core;
+namespace Buddy.Core.Agents;
 
 public sealed class BuddyAgent {
     private readonly ToolRegistry _toolRegistry;
@@ -100,5 +100,4 @@ public sealed class BuddyAgent {
         if (string.IsNullOrWhiteSpace(json)) return "";
         return json.Length <= 120 ? json : json[..117] + "...";
     }
-
 }

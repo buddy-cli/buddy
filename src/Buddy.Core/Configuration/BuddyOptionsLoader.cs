@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace Buddy.Core;
+namespace Buddy.Core.Configuration;
 
 public static class BuddyOptionsLoader {
     private static readonly Dictionary<string, string> CommandLineSwitchMappings = new(StringComparer.OrdinalIgnoreCase) {
