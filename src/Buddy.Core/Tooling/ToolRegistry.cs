@@ -37,6 +37,11 @@ public sealed class ToolRegistry {
             return $"error: invalid tool arguments JSON ({ex.Message})\nraw: {argumentsJson}";
         }
 
-        return await tool.ExecuteAsync(args, cancellationToken);
+        try {
+            return await tool.ExecuteAsync(args, cancellationToken);
+        }
+        catch (Exception ex) {
+            return $"error: {ex.Message}";
+        }
     }
 }

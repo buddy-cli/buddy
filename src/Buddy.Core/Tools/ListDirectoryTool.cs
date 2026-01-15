@@ -31,7 +31,10 @@ public sealed class ListDirectoryTool : ITool {
     public Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {
         var rawPath = _workingDirectory;
         if (args.ValueKind == JsonValueKind.Object && args.TryGetProperty("path", out var pathEl) && pathEl.ValueKind == JsonValueKind.String) {
-            rawPath = pathEl.GetString() ?? _workingDirectory;
+            var providedPath = pathEl.GetString();
+            if (!string.IsNullOrWhiteSpace(providedPath)) {
+                rawPath = providedPath;
+            }
         }
 
         var path = PathResolver.Resolve(_workingDirectory, rawPath);
