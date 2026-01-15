@@ -280,7 +280,6 @@ internal sealed class ConsoleTextEditor {
     private sealed class ConsoleTextRenderer {
         private readonly string _promptMarkup;
         private readonly string _promptPlain;
-        private int _originLeft;
         private int _originTop;
         private int _renderedLines = 1;
         private bool _started;
@@ -295,12 +294,14 @@ internal sealed class ConsoleTextEditor {
                 return;
             }
 
-            _originLeft = 0;
             _originTop = Console.CursorTop;
             _started = true;
         }
 
         public void End() {
+            // Move cursor to end of last rendered line and print newline
+            Console.SetCursorPosition(0, _originTop + _renderedLines - 1);
+            Console.WriteLine();
             _started = false;
             _renderedLines = 1;
         }
@@ -310,16 +311,37 @@ internal sealed class ConsoleTextEditor {
                 return;
             }
 
-            ClearPrevious();
-            WriteText(text);
-            PositionCursor(text, cursorIndex);
+            var lines = text.Replace("\r", string.Empty).Split('\n');
+            var newLineCount = lines.Length;
+
+            // Check if we need more lines than before and might scroll
+            if (newLineCount > _renderedLines) {
+                // Position at end and write new lines to make space
+                Console.SetCursorPosition(0, _originTop + _renderedLines - 1);
+                for (var i = _renderedLines; i < newLineCount; i++) {
+                    Console.WriteLine();
+                }
+                // Adjust origin if console scrolled
+                var expectedBottom = _originTop + newLineCount - 1;
+                if (expectedBottom >= Console.BufferHeight) {
+                    _originTop -= (expectedBottom - Console.BufferHeight + 1);
+                    if (_originTop < 0) _originTop = 0;
+                }
+            }
+
+            ClearLines(newLineCount);
+            WriteText(lines);
+            _renderedLines = newLineCount;
+            PositionCursor(lines, cursorIndex);
         }
 
-        private void ClearPrevious() {
+        private void ClearLines(int lineCount) {
             var width = Math.Max(Console.BufferWidth, 1);
             var clear = new string(' ', Math.Max(0, width - 1));
 
-            for (var i = 0; i < _renderedLines; i++) {
+            // Clear all lines we might have used (max of old and new count)
+            var maxLines = Math.Max(_renderedLines, lineCount);
+            for (var i = 0; i < maxLines; i++) {
                 var top = _originTop + i;
                 if (top >= Console.BufferHeight) {
                     break;
@@ -328,40 +350,35 @@ internal sealed class ConsoleTextEditor {
                 Console.SetCursorPosition(0, top);
                 Console.Write(clear);
             }
-
-            Console.SetCursorPosition(_originLeft, _originTop);
         }
 
-        private void WriteText(string text) {
-            var lines = text.Replace("\r", string.Empty).Split('\n');
-            _renderedLines = lines.Length;
-
+        private void WriteText(string[] lines) {
             for (var i = 0; i < lines.Length; i++) {
-                if (i > 0) {
-                    Console.WriteLine();
-                }
-
+                Console.SetCursorPosition(0, _originTop + i);
                 AnsiConsole.Markup(_promptMarkup);
                 Console.Write(lines[i]);
             }
         }
 
-        private void PositionCursor(string text, int cursorIndex) {
-            var lineStarts = new List<int> { 0 };
-            for (var i = 0; i < text.Length; i++) {
-                if (text[i] == '\n') {
-                    lineStarts.Add(i + 1);
-                }
-            }
-
+        private void PositionCursor(string[] lines, int cursorIndex) {
+            // Find which line the cursor is on
+            var pos = 0;
             var lineIndex = 0;
-            for (var i = 0; i < lineStarts.Count; i++) {
-                if (lineStarts[i] <= cursorIndex) {
+            for (var i = 0; i < lines.Length; i++) {
+                var lineEnd = pos + lines[i].Length;
+                if (cursorIndex <= lineEnd) {
                     lineIndex = i;
+                    break;
                 }
+                pos = lineEnd + 1; // +1 for newline
+                lineIndex = i;
             }
 
-            var lineStart = lineStarts[lineIndex];
+            var lineStart = 0;
+            for (var i = 0; i < lineIndex; i++) {
+                lineStart += lines[i].Length + 1;
+            }
+
             var column = cursorIndex - lineStart;
             var left = _promptPlain.Length + column;
             var top = _originTop + lineIndex;
