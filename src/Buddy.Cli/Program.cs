@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using Buddy.Core;
 using Buddy.LLM;
 using DotNetEnv;
@@ -149,81 +147,6 @@ return 0;
 string ReadUserInput() {
     const string promptPlain = "> ";
     const string promptMarkup = "[green]>[/] ";
-    var buffer = new StringBuilder();
-    var lineLengths = new List<int> { 0 };
-
-    AnsiConsole.Markup(promptMarkup);
-
-    while (true) {
-        var key = Console.ReadKey(intercept: true);
-
-        if (key.Key == ConsoleKey.Enter) {
-            if ((key.Modifiers & ConsoleModifiers.Control) != 0 || (key.Modifiers & ConsoleModifiers.Shift) != 0) {
-                AppendNewline();
-                continue;
-            }
-
-            if (buffer.Length > 0 && buffer[^1] == '\\') {
-                buffer.Length--;
-                AppendNewline();
-                continue;
-            }
-
-            Console.WriteLine();
-            return buffer.ToString().TrimEnd('\r', '\n');
-        }
-
-        if (key.Key == ConsoleKey.J && (key.Modifiers & ConsoleModifiers.Control) != 0) {
-            AppendNewline();
-            continue;
-        }
-
-        if ((key.Modifiers & ConsoleModifiers.Control) != 0) {
-            // Ignore other Ctrl+key combos (prevents stray characters like "\" on some terminals)
-            continue;
-        }
-
-        if (key.Key == ConsoleKey.Backspace) {
-            if (buffer.Length == 0) {
-                continue;
-            }
-
-            var last = buffer[^1];
-            if (last == '\n') {
-                buffer.Length--;
-                if (buffer.Length > 0 && buffer[^1] == '\r') {
-                    buffer.Length--;
-                }
-
-                if (lineLengths.Count > 1) {
-                    lineLengths.RemoveAt(lineLengths.Count - 1);
-                }
-
-                var targetLength = lineLengths[^1];
-                var pos = Console.GetCursorPosition();
-                Console.SetCursorPosition(promptPlain.Length + targetLength, Math.Max(0, pos.Top - 1));
-                continue;
-            }
-
-            buffer.Length--;
-            lineLengths[^1] = Math.Max(0, lineLengths[^1] - 1);
-            Console.Write("\b \b");
-            continue;
-        }
-
-        if (key.KeyChar == '\u0000') {
-            continue;
-        }
-
-        buffer.Append(key.KeyChar);
-        lineLengths[^1]++;
-        Console.Write(key.KeyChar);
-    }
-
-    void AppendNewline() {
-        buffer.AppendLine();
-        Console.WriteLine();
-        AnsiConsole.Markup(promptMarkup);
-        lineLengths.Add(0);
-    }
+    var editor = new Buddy.Cli.ConsoleTextEditor(promptMarkup, promptPlain);
+    return editor.ReadInput();
 }
