@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using Buddy.Core;
 using Buddy.LLM;
 using DotNetEnv;
@@ -32,7 +34,7 @@ AnsiConsole.Write(new FigletText("buddy").Color(Color.Grey));
 AnsiConsole.MarkupLine("[bold]buddy coding agent[/] [grey](phase 2: streaming hello)[/]");
 AnsiConsole.MarkupLine($"version {version} • working dir [underline]{workingDirectory}[/]");
 AnsiConsole.MarkupLine($"model [bold]{options.Model}[/] • base url [grey]{options.BaseUrl ?? "(default)"}[/]");
-AnsiConsole.MarkupLine("Type a message to chat. Use /help for commands.");
+AnsiConsole.MarkupLine("Type a message to chat. Use /help for commands. Press Ctrl+Enter or Shift+Enter for a newline.");
 
 var systemPrompt = $@"You are buddy, a research-grade coding agent. 
 Your job is to assist the user with programming tasks. 
@@ -59,17 +61,7 @@ Console.CancelKeyPress += (_, e) => {
 };
 
 while (!exitRequested) {
-    string input;
-    try {
-        input = AnsiConsole.Prompt(
-            new TextPrompt<string>("[green]>[/] ")
-                .AllowEmpty()
-        ).Trim();
-    }
-    catch {
-        // If Spectre prompt fails (e.g., canceled), exit cleanly.
-        break;
-    }
+    var input = ReadUserInput();
 
     if (string.IsNullOrWhiteSpace(input)) {
         continue;
@@ -153,3 +145,85 @@ while (!exitRequested) {
 }
 
 return 0;
+
+string ReadUserInput() {
+    const string promptPlain = "> ";
+    const string promptMarkup = "[green]>[/] ";
+    var buffer = new StringBuilder();
+    var lineLengths = new List<int> { 0 };
+
+    AnsiConsole.Markup(promptMarkup);
+
+    while (true) {
+        var key = Console.ReadKey(intercept: true);
+
+        if (key.Key == ConsoleKey.Enter) {
+            if ((key.Modifiers & ConsoleModifiers.Control) != 0 || (key.Modifiers & ConsoleModifiers.Shift) != 0) {
+                AppendNewline();
+                continue;
+            }
+
+            if (buffer.Length > 0 && buffer[^1] == '\\') {
+                buffer.Length--;
+                AppendNewline();
+                continue;
+            }
+
+            Console.WriteLine();
+            return buffer.ToString().TrimEnd('\r', '\n');
+        }
+
+        if (key.Key == ConsoleKey.J && (key.Modifiers & ConsoleModifiers.Control) != 0) {
+            AppendNewline();
+            continue;
+        }
+
+        if ((key.Modifiers & ConsoleModifiers.Control) != 0) {
+            // Ignore other Ctrl+key combos (prevents stray characters like "\" on some terminals)
+            continue;
+        }
+
+        if (key.Key == ConsoleKey.Backspace) {
+            if (buffer.Length == 0) {
+                continue;
+            }
+
+            var last = buffer[^1];
+            if (last == '\n') {
+                buffer.Length--;
+                if (buffer.Length > 0 && buffer[^1] == '\r') {
+                    buffer.Length--;
+                }
+
+                if (lineLengths.Count > 1) {
+                    lineLengths.RemoveAt(lineLengths.Count - 1);
+                }
+
+                var targetLength = lineLengths[^1];
+                var pos = Console.GetCursorPosition();
+                Console.SetCursorPosition(promptPlain.Length + targetLength, Math.Max(0, pos.Top - 1));
+                continue;
+            }
+
+            buffer.Length--;
+            lineLengths[^1] = Math.Max(0, lineLengths[^1] - 1);
+            Console.Write("\b \b");
+            continue;
+        }
+
+        if (key.KeyChar == '\u0000') {
+            continue;
+        }
+
+        buffer.Append(key.KeyChar);
+        lineLengths[^1]++;
+        Console.Write(key.KeyChar);
+    }
+
+    void AppendNewline() {
+        buffer.AppendLine();
+        Console.WriteLine();
+        AnsiConsole.Markup(promptMarkup);
+        lineLengths.Add(0);
+    }
+}
