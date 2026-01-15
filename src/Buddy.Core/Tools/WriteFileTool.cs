@@ -48,4 +48,11 @@ public sealed class WriteFileTool : ITool {
         await File.WriteAllTextAsync(path, content, cancellationToken);
         return $"ok: wrote {content.Length} chars to {path}";
     }
+
+    public string FormatStatusLine(JsonElement args) {
+        var path = args.TryGetProperty("path", out var p) && p.ValueKind == JsonValueKind.String
+            ? p.GetString() ?? "(unknown)"
+            : "(unknown)";
+        return $"Writing file: {path}";
+    }
 }

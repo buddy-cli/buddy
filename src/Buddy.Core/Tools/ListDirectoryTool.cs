@@ -54,4 +54,11 @@ public sealed class ListDirectoryTool : ITool {
 
         return Task.FromResult(sb.ToString().TrimEnd());
     }
+
+    public string FormatStatusLine(JsonElement args) {
+        var path = args.TryGetProperty("path", out var p) && p.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(p.GetString())
+            ? p.GetString()!
+            : ".";
+        return $"Listing directory: {path}";
+    }
 }

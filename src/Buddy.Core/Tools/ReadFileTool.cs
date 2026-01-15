@@ -40,4 +40,11 @@ public sealed class ReadFileTool : ITool {
 
         return await File.ReadAllTextAsync(path, cancellationToken);
     }
+
+    public string FormatStatusLine(JsonElement args) {
+        var path = args.TryGetProperty("path", out var p) && p.ValueKind == JsonValueKind.String
+            ? p.GetString() ?? "(unknown)"
+            : "(unknown)";
+        return $"Reading file: {path}";
+    }
 }

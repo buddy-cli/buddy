@@ -23,6 +23,20 @@ public sealed class ToolRegistry {
     public bool TryGet(string name, out ITool tool)
         => _byName.TryGetValue(name, out tool!);
 
+    public string FormatStatusLine(string name, string argumentsJson) {
+        if (!TryGet(name, out var tool)) {
+            return $"Running: {name}";
+        }
+
+        try {
+            using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+            return tool.FormatStatusLine(doc.RootElement);
+        }
+        catch {
+            return $"Running: {name}";
+        }
+    }
+
     public async Task<string> ExecuteAsync(string name, string argumentsJson, CancellationToken cancellationToken) {
         if (!TryGet(name, out var tool)) {
             return $"error: unknown tool '{name}'";

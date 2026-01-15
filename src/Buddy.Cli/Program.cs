@@ -32,7 +32,7 @@ builder.Services.AddBuddyCore(options);
 using var host = builder.Build();
 
 AnsiConsole.Write(new FigletText("buddy").Color(Color.Grey));
-AnsiConsole.MarkupLine("[bold]buddy coding agent[/] [grey](phase 2: streaming hello)[/]");
+AnsiConsole.MarkupLine("[bold]buddy coding agent[/]");
 AnsiConsole.MarkupLine($"version {version} • working dir [underline]{workingDirectory}[/]");
 AnsiConsole.MarkupLine($"model [bold]{options.Model}[/] • base url [grey]{options.BaseUrl ?? "(default)"}[/]");
 AnsiConsole.MarkupLine("Type a message to chat. Use /help for commands. Press Ctrl+Enter or Shift+Enter for a newline.");

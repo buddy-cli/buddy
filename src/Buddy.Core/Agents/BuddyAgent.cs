@@ -73,7 +73,8 @@ public sealed class BuddyAgent {
 
             // Execute tools sequentially and append tool messages.
             foreach (var tc in toolCalls) {
-                await onToolStatus($"→ {tc.Name}({SummarizeArgs(tc.ArgumentsJson)})");
+                var statusLine = _toolRegistry.FormatStatusLine(tc.Name, tc.ArgumentsJson);
+                await onToolStatus($"→ {statusLine}");
 
                 var result = await _toolRegistry.ExecuteAsync(tc.Name, tc.ArgumentsJson, cancellationToken);
                 _history.Add(new Message(MessageRole.Tool, result, ToolCallId: tc.Id));
@@ -94,10 +95,5 @@ public sealed class BuddyAgent {
         list.Add(new Message(MessageRole.System, sys));
         list.AddRange(_history);
         return list;
-    }
-
-    private static string SummarizeArgs(string json) {
-        if (string.IsNullOrWhiteSpace(json)) return "";
-        return json.Length <= 120 ? json : json[..117] + "...";
     }
 }

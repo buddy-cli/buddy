@@ -66,4 +66,15 @@ public sealed class RunTerminalTool : ITool {
         var exitCode = process.ExitCode;
         return $"exit_code: {exitCode}\nstdout:\n{stdout.ToString().TrimEnd()}\nstderr:\n{stderr.ToString().TrimEnd()}";
     }
+
+    public string FormatStatusLine(JsonElement args) {
+        var command = args.TryGetProperty("command", out var c) && c.ValueKind == JsonValueKind.String
+            ? c.GetString() ?? "(unknown)"
+            : "(unknown)";
+        // Truncate long commands for display
+        if (command.Length > 60) {
+            command = command[..57] + "...";
+        }
+        return $"Running: {command}";
+    }
 }

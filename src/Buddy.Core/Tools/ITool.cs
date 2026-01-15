@@ -10,4 +10,9 @@ public interface ITool {
     string Description { get; }
     JsonElement ParameterSchema { get; }
     Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a user-friendly status line for display (e.g., "Reading file: README.md").
+    /// </summary>
+    string FormatStatusLine(JsonElement args);
 }

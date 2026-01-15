@@ -81,4 +81,11 @@ public sealed class EditFileTool : ITool {
 
         return count;
     }
+
+    public string FormatStatusLine(JsonElement args) {
+        var path = args.TryGetProperty("path", out var p) && p.ValueKind == JsonValueKind.String
+            ? p.GetString() ?? "(unknown)"
+            : "(unknown)";
+        return $"Editing file: {path}";
+    }
 }
