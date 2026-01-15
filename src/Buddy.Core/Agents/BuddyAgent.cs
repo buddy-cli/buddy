@@ -28,7 +28,7 @@ public sealed class BuddyAgent {
         var tools = _toolRegistry.GetToolDefinitions();
 
         // Loop: LLM -> tool calls -> tool results -> LLM
-        for (var round = 0; round < 8; round++) {
+        for (var round = 0; round < 50; round++) {
             var messages = BuildMessageList(systemPrompt, projectInstructions);
 
             var assistantText = new StringBuilder();

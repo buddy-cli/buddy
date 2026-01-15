@@ -127,7 +127,6 @@ while (!exitRequested) {
             onToolStatus: status => {
                 Console.WriteLine();
                 AnsiConsole.MarkupLine($"[grey]{Markup.Escape(status)}[/]");
-                AnsiConsole.Markup("[bold]buddy:[/] ");
                 return Task.CompletedTask;
             },
             cancellationToken: turnCts.Token);
