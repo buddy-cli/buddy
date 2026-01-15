@@ -446,7 +446,8 @@ internal sealed class ConsoleTextEditor {
     private sealed class ConsoleTextRenderer {
         private readonly string _promptMarkup;
         private readonly string _promptPlain;
-        private int _renderedLines = 1;
+        private int _cursorLine;        // Which line cursor is currently on (0-indexed)
+        private int _contentLineCount;  // How many lines of content we last rendered
         private bool _started;
 
         // ANSI escape sequences
@@ -466,6 +467,8 @@ internal sealed class ConsoleTextEditor {
                 return;
             }
             _started = true;
+            _cursorLine = 0;
+            _contentLineCount = 1;
         }
 
         public void End() {
@@ -475,7 +478,8 @@ internal sealed class ConsoleTextEditor {
             Console.WriteLine();
             
             _started = false;
-            _renderedLines = 1;
+            _cursorLine = 0;
+            _contentLineCount = 1;
         }
 
         public void Render(string text, int cursorIndex) {
@@ -485,13 +489,13 @@ internal sealed class ConsoleTextEditor {
 
             var lines = text.Replace("\r", string.Empty).Split('\n');
             var newLineCount = lines.Length;
-            var maxLines = Math.Max(_renderedLines, newLineCount);
+            
+            // We need to clear max of previous content lines and new content lines
+            var maxLines = Math.Max(_contentLineCount, newLineCount);
 
-            // Move cursor to start of our rendering area (go up to first line)
-            // We need to go up (_renderedLines - 1) lines to get back to the first line
-            // then go to column 0
+            // Move cursor to start of our rendering area (go up to line 0)
             Console.Out.Write("\r"); // Go to column 0
-            for (var i = 0; i < _renderedLines - 1; i++) {
+            for (var i = 0; i < _cursorLine; i++) {
                 Console.Out.Write(CursorUp);
             }
             
@@ -512,13 +516,18 @@ internal sealed class ConsoleTextEditor {
                 }
             }
             
-            _renderedLines = newLineCount;
+            // After the loop, cursor is at line (maxLines - 1)
+            // Remember how many content lines we have
+            _contentLineCount = newLineCount;
             
-            // Position cursor at the correct location
-            PositionCursor(lines, cursorIndex);
+            // Position cursor at the correct location in the content
+            _cursorLine = PositionCursor(lines, cursorIndex, maxLines - 1);
         }
 
-        private void PositionCursor(string[] lines, int cursorIndex) {
+        /// <summary>
+        /// Positions the cursor and returns the line index where cursor ends up.
+        /// </summary>
+        private int PositionCursor(string[] lines, int cursorIndex, int currentLine) {
             // Find which line the cursor is on
             var pos = 0;
             var lineIndex = 0;
@@ -540,8 +549,8 @@ internal sealed class ConsoleTextEditor {
             var column = cursorIndex - lineStart;
             var targetCol = _promptPlain.Length + column;
             
-            // We're at the last rendered line. Move up to target line.
-            var linesToMoveUp = (lines.Length - 1) - lineIndex;
+            // We're at currentLine. Move up to target line.
+            var linesToMoveUp = currentLine - lineIndex;
             
             Console.Out.Write("\r");
             for (var i = 0; i < linesToMoveUp; i++) {
@@ -550,6 +559,8 @@ internal sealed class ConsoleTextEditor {
             
             Console.Out.Write(CursorToColumn(targetCol));
             Console.Out.Flush();
+            
+            return lineIndex;
         }
     }
 }
