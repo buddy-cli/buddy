@@ -9,7 +9,7 @@ This repository is primarily a **research/learning project** for the author to u
 - Tool calling loop (LLM → tools → results → LLM)
 - Deterministic file edits via exact search/replace
 - Local slash commands
-- Project instruction injection via `AGENTS.md` / `BUDDY.md`
+- Project instruction injection via `AGENTS.md`
 
 It is **not** a production-ready agent and makes trade-offs for simplicity and hackability.
 
@@ -26,7 +26,6 @@ It is **not** a production-ready agent and makes trade-offs for simplicity and h
 - Slash commands (handled locally, not sent to the LLM):
   - `/help`, `/clear`, `/model <name>`, `/exit`, `/quit`
 - Instruction loading (nearest wins while traversing up from working dir):
-  - `BUDDY.md` (preferred)
   - `AGENTS.md`
 
 ## Configuration

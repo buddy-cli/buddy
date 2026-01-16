@@ -8,11 +8,6 @@ public static class ProjectInstructionsLoader {
 
         var dir = new DirectoryInfo(workingDirectory);
         while (dir is not null) {
-            var buddy = Path.Combine(dir.FullName, "BUDDY.md");
-            if (File.Exists(buddy)) {
-                return SafeReadAllText(buddy);
-            }
-
             var agents = Path.Combine(dir.FullName, "AGENTS.md");
             if (File.Exists(agents)) {
                 return SafeReadAllText(agents);
