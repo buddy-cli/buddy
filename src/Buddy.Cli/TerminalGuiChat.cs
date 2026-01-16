@@ -187,7 +187,7 @@ internal static class TerminalGuiChat {
             footer.Add(footerLeft, footerRight);
 
             var inputHint = new Label {
-                Text = "Type a message. Ctrl+Enter sends. (Esc to quit).",
+                Text = "Type a message or /command (e.g., /help) ",
                 X = 1,
                 Y = 0
             };
