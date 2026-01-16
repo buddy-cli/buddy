@@ -247,7 +247,7 @@ internal static class TerminalGuiChat {
                 if (!hostControlSet)
                 {
                     hostControlSet = true;
-                    input.Autocomplete.HostControl = window;
+                    input.Autocomplete.HostControl = input;
                 }
             };
 
