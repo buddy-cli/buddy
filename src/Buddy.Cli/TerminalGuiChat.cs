@@ -30,7 +30,11 @@ internal static class TerminalGuiChat {
         var bannerLines = bannerText.Split('\n').Length;
         var infoLines = 2;
         var headerHeight = bannerLines + infoLines;
+        var sessionHeaderHeight = 2;
+        var stageHeight = 1;
         var inputHeight = 3;
+        var sessionStarted = false;
+        var currentStage = "Idle";
 
         Application.Init();
         var top = new Toplevel();
@@ -42,11 +46,11 @@ internal static class TerminalGuiChat {
             Height = Dim.Fill()
         };
         try {
-            var header = new View {
+            var startView = new View {
                 X = 0,
                 Y = 0,
                 Width = Dim.Fill(),
-                Height = headerHeight
+                Height = Dim.Fill()
             };
 
             var headerTitle = new Label {
@@ -61,13 +65,48 @@ internal static class TerminalGuiChat {
                 Y = bannerLines
             };
 
-            header.Add(headerTitle, headerInfo);
+            startView.Add(headerTitle, headerInfo);
+
+            var sessionView = new View {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
+                Visible = false
+            };
+
+            var sessionHeader = new View {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = sessionHeaderHeight
+            };
+
+            var sessionTitle = new Label {
+                Text = $"buddy  •  v{version}  •  model {options.Model}",
+                X = 1,
+                Y = 0
+            };
+
+            var sessionInfo = new Label {
+                Text = $"working dir {options.WorkingDirectory}",
+                X = 1,
+                Y = 1
+            };
+
+            sessionHeader.Add(sessionTitle, sessionInfo);
+
+            var stageLabel = new Label {
+                Text = $"Stage: {currentStage}",
+                X = 1,
+                Y = Pos.Bottom(sessionHeader)
+            };
 
             var history = new TextView {
                 X = 0,
-                Y = Pos.Bottom(header),
+                Y = Pos.Bottom(stageLabel),
                 Width = Dim.Fill(),
-                Height = Dim.Fill(headerHeight + inputHeight + 1),
+                Height = Dim.Fill(sessionHeaderHeight + stageHeight + inputHeight + 1),
                 ReadOnly = true,
                 WordWrap = true,
                 CanFocus = false,
@@ -121,12 +160,32 @@ internal static class TerminalGuiChat {
                 input.Height = inputHeight;
                 inputPanel.Height = inputHeight + 1;
                 inputPanel.Y = Pos.AnchorEnd(inputHeight + 1);
-                history.Height = Dim.Fill(headerHeight + inputHeight + 1);
-                history.Y = Pos.Bottom(header);
+                if (sessionStarted) {
+                    history.Height = Dim.Fill(sessionHeaderHeight + stageHeight + inputHeight + 1);
+                    history.Y = Pos.Bottom(stageLabel);
+                }
                 inputPanel.SetNeedsLayout();
                 history.SetNeedsLayout();
+                startView.SetNeedsLayout();
+                sessionView.SetNeedsLayout();
                 window.SetNeedsLayout();
                 Application.LayoutAndDraw();
+            }
+
+            void SetStage(string stage) {
+                currentStage = stage;
+                Application.Invoke(() => { stageLabel.Text = $"Stage: {currentStage}"; });
+            }
+
+            void SwitchToSession() {
+                if (sessionStarted) {
+                    return;
+                }
+
+                sessionStarted = true;
+                startView.Visible = false;
+                sessionView.Visible = true;
+                ApplyLayout();
             }
 
             async Task SendAsync() {
@@ -149,6 +208,9 @@ internal static class TerminalGuiChat {
                 input.Enabled = false;
                 sendButton.Enabled = false;
 
+                SwitchToSession();
+                SetStage("Planning");
+
                 AppendHistoryOnUi($"\nYou: {text}\nBuddy: ");
 
                 turnCts = new CancellationTokenSource();
@@ -160,10 +222,12 @@ internal static class TerminalGuiChat {
                         projectInstructions,
                         text,
                         onTextDelta: delta => {
+                            SetStage("Responding");
                             AppendHistoryOnUi(delta);
                             return Task.CompletedTask;
                         },
                         onToolStatus: status => {
+                            SetStage("Tooling");
                             AppendHistoryOnUi($"\n{status}\n");
                             AppendHistoryOnUi("Buddy: ");
                             return Task.CompletedTask;
@@ -171,12 +235,15 @@ internal static class TerminalGuiChat {
                         cancellationToken: turnCts.Token);
                 }
                 catch (OperationCanceledException) {
+                    SetStage("Canceled");
                     AppendHistoryOnUi("\n(canceled)\n");
                 }
                 catch (Exception ex) {
+                    SetStage("Error");
                     AppendHistoryOnUi($"\nerror: {ex.Message}\n");
                 }
                 finally {
+                    SetStage("Done");
                     turnCts?.Dispose();
                     turnCts = null;
                     turnInFlight = false;
@@ -264,7 +331,8 @@ internal static class TerminalGuiChat {
             };
 
             inputPanel.Add(inputHint, input, sendButton);
-            window.Add(header, history, inputPanel);
+            sessionView.Add(sessionHeader, stageLabel, history);
+            window.Add(startView, sessionView, inputPanel);
             top.Add(window);
 
             input.SetFocus();
