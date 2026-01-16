@@ -37,6 +37,7 @@ internal static class TerminalGuiChat {
         var infoHintHeight = 1;
         var infoLayerHeight = infoHintHeight;
         var inputHeight = 3;
+        var footerHeight = 1;
         var sessionStarted = false;
         var currentStage = "Idle";
 
@@ -74,7 +75,7 @@ internal static class TerminalGuiChat {
             };
 
             var headerInfo = new Label {
-                Text = $"version {version}  •  model {options.Model}  •  base url {options.BaseUrl ?? "(default)"}\nworking dir {options.WorkingDirectory}",
+                Text = $"model {options.Model}  •  base url {options.BaseUrl ?? "(default)"}",
                 X = 1,
                 Y = bannerLines
             };
@@ -120,7 +121,7 @@ internal static class TerminalGuiChat {
                 X = 0,
                 Y = Pos.Bottom(stageLabel),
                 Width = Dim.Fill(),
-                Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + 2),
+                Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + footerHeight + 3),
                 ReadOnly = true,
                 WordWrap = true,
                 CanFocus = false,
@@ -146,7 +147,7 @@ internal static class TerminalGuiChat {
 
             var inputPanel = new View {
                 X = 0,
-                Y = Pos.AnchorEnd(inputHeight + 1),
+                Y = Pos.AnchorEnd(inputHeight + footerHeight + 1),
                 Width = Dim.Fill(),
                 Height = inputHeight + 1,
                 CanFocus = true,
@@ -155,12 +156,35 @@ internal static class TerminalGuiChat {
 
             var infoLayer = new View {
                 X = 0,
-                Y = Pos.AnchorEnd(inputHeight + infoLayerHeight + 1),
+                Y = Pos.AnchorEnd(inputHeight + footerHeight + infoLayerHeight + 1),
                 Width = Dim.Fill(),
                 Height = infoLayerHeight,
                 CanFocus = false,
                 TabStop = TabBehavior.NoStop
             };
+
+            var footer = new View {
+                X = 0,
+                Y = Pos.AnchorEnd(footerHeight),
+                Width = Dim.Fill(),
+                Height = footerHeight,
+                CanFocus = false,
+                TabStop = TabBehavior.NoStop
+            };
+
+            var footerLeft = new Label {
+                Text = options.WorkingDirectory,
+                X = 1,
+                Y = 0
+            };
+
+            var footerRight = new Label {
+                Text = version,
+                X = Pos.AnchorEnd(version.Length + 1),
+                Y = 0
+            };
+
+            footer.Add(footerLeft, footerRight);
 
             var inputHint = new Label {
                 Text = "Type a message. Ctrl+Enter sends. (Esc to quit).",
@@ -273,13 +297,14 @@ internal static class TerminalGuiChat {
             void ApplyLayout() {
                 input.Height = inputHeight;
                 inputPanel.Height = inputHeight + 1;
-                inputPanel.Y = Pos.AnchorEnd(inputHeight + 1);
+                inputPanel.Y = Pos.AnchorEnd(inputHeight + footerHeight + 1);
                 infoLayer.Height = infoLayerHeight;
-                infoLayer.Y = Pos.AnchorEnd(inputHeight + infoLayerHeight + 1);
+                infoLayer.Y = Pos.AnchorEnd(inputHeight + footerHeight + infoLayerHeight + 1);
                 if (sessionStarted) {
-                    history.Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + 2);
+                    history.Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + footerHeight + 3);
                     history.Y = Pos.Bottom(stageLabel);
                 }
+                footer.SetNeedsLayout();
                 infoLayer.SetNeedsLayout();
                 inputPanel.SetNeedsLayout();
                 history.SetNeedsLayout();
@@ -454,7 +479,7 @@ internal static class TerminalGuiChat {
 
             inputPanel.Add(input, sendButton);
             sessionView.Add(sessionHeader, stageLabel, history);
-            window.Add(startView, sessionView, infoLayer, inputPanel);
+            window.Add(startView, sessionView, infoLayer, inputPanel, footer);
             top.Add(window);
 
             input.SetFocus();
