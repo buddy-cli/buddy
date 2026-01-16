@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using System.Text;
+using Buddy.Cli.Ui;
 using Buddy.Core.Agents;
 using Buddy.LLM;
 using Terminal.Gui;
@@ -32,9 +34,21 @@ internal static class TerminalGuiChat {
         var headerHeight = bannerLines + infoLines;
         var sessionHeaderHeight = 2;
         var stageHeight = 1;
+        var infoHintHeight = 1;
+        var infoLayerHeight = infoHintHeight;
         var inputHeight = 3;
         var sessionStarted = false;
         var currentStage = "Idle";
+
+        // Define available slash commands
+        var slashCommands = new List<SlashCommandOption>
+        {
+            new() { Command = "help", Description = "Show available commands" },
+            new() { Command = "clear", Description = "Clear conversation history" },
+            new() { Command = "model", Description = "Switch or view current model", ParameterHint = "<name>" },
+            new() { Command = "exit", Description = "Exit the application" },
+            new() { Command = "quit", Description = "Exit the application" }
+        };
 
         Application.Init();
         var top = new Toplevel();
@@ -106,12 +120,29 @@ internal static class TerminalGuiChat {
                 X = 0,
                 Y = Pos.Bottom(stageLabel),
                 Width = Dim.Fill(),
-                Height = Dim.Fill(sessionHeaderHeight + stageHeight + inputHeight + 1),
+                Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + 2),
                 ReadOnly = true,
                 WordWrap = true,
                 CanFocus = false,
                 TabStop = TabBehavior.NoStop
             };
+
+            var driver = Application.Driver ?? throw new InvalidOperationException("Terminal driver not initialized.");
+
+            var idleLogScheme = new ColorScheme {
+                Normal = driver.MakeColor(Color.White, Color.Blue),
+                Focus = driver.MakeColor(Color.White, Color.Blue)
+            };
+
+            var activeLogScheme = new ColorScheme {
+                Normal = driver.MakeColor(Color.Black, Color.White),
+                Focus = driver.MakeColor(Color.Black, Color.White)
+            };
+
+            void UpdateLogStyle()
+            {
+                history.ColorScheme = historyBuffer.Length == 0 ? idleLogScheme : activeLogScheme;
+            }
 
             var inputPanel = new View {
                 X = 0,
@@ -122,11 +153,36 @@ internal static class TerminalGuiChat {
                 TabStop = TabBehavior.TabStop
             };
 
+            var infoLayer = new View {
+                X = 0,
+                Y = Pos.AnchorEnd(inputHeight + infoLayerHeight + 1),
+                Width = Dim.Fill(),
+                Height = infoLayerHeight,
+                CanFocus = false,
+                TabStop = TabBehavior.NoStop
+            };
+
             var inputHint = new Label {
                 Text = "Type a message. Ctrl+Enter sends. (Esc to quit).",
                 X = 1,
                 Y = 0
             };
+
+            var suggestionList = new ListView {
+                X = 1,
+                Y = 1,
+                Width = Dim.Fill(1),
+                Height = 0,
+                CanFocus = false,
+                TabStop = TabBehavior.NoStop,
+                AllowsMarking = false,
+                Visible = false
+            };
+
+            var suggestionItems = new ObservableCollection<string>();
+            suggestionList.SetSource(suggestionItems);
+
+            infoLayer.Add(inputHint, suggestionList);
 
             var input = new TextView {
                 X = 1,
@@ -136,6 +192,63 @@ internal static class TerminalGuiChat {
                 WordWrap = true,
                 CanFocus = true,
                 TabStop = TabBehavior.TabStop
+            };
+
+            // Configure autocomplete for slash commands
+            input.Autocomplete.SuggestionGenerator = new SlashCommandSuggestionGenerator(slashCommands);
+            input.Autocomplete.SelectionKey = KeyCode.Tab; // Use Tab to select suggestions (Enter sends the message)
+            input.Autocomplete.PopupInsideContainer = false; // Render popup outside the input box (so it can expand upward)
+            input.Autocomplete.MaxHeight = 8;
+            
+            // Update suggestions when input changes
+            input.ContentsChanged += (_, _) =>
+            {
+                var text = input.Text?.ToString() ?? string.Empty;
+
+                if (string.IsNullOrEmpty(text) || !text.StartsWith("/"))
+                {
+                    suggestionList.Visible = false;
+                    suggestionItems.Clear();
+                    infoLayerHeight = infoHintHeight;
+                    input.Autocomplete.ClearSuggestions();
+                    input.Autocomplete.Visible = false;
+                    ApplyLayout();
+                    return;
+                }
+
+                var commandPrefix = text.Length > 1 ? text.Substring(1).Split(' ')[0] : string.Empty;
+                var matches = slashCommands
+                    .Where(cmd => cmd.Command.StartsWith(commandPrefix, StringComparison.OrdinalIgnoreCase))
+                    .Select(cmd => $"/{cmd.Command.PadRight(12)} {cmd.Description}")
+                    .ToList();
+
+                if (matches.Count == 0)
+                {
+                    matches.Add("No matches found");
+                }
+
+                var visibleRows = Math.Min(matches.Count, input.Autocomplete.MaxHeight);
+                suggestionItems.Clear();
+                foreach (var match in matches)
+                {
+                    suggestionItems.Add(match);
+                }
+                suggestionList.Height = visibleRows;
+                suggestionList.Visible = true;
+                infoLayerHeight = infoHintHeight + visibleRows;
+                input.Autocomplete.Visible = false;
+                ApplyLayout();
+            };
+            
+            // Set HostControl on first iteration after app starts
+            var hostControlSet = false;
+            Application.Iteration += (_, _) =>
+            {
+                if (!hostControlSet)
+                {
+                    hostControlSet = true;
+                    input.Autocomplete.HostControl = window;
+                }
             };
 
             var sendButton = new Button {
@@ -149,6 +262,7 @@ internal static class TerminalGuiChat {
             void AppendHistory(string text) {
                 historyBuffer.Append(text);
                 history.Text = historyBuffer.ToString();
+                UpdateLogStyle();
                 history.MoveEnd();
             }
 
@@ -160,10 +274,13 @@ internal static class TerminalGuiChat {
                 input.Height = inputHeight;
                 inputPanel.Height = inputHeight + 1;
                 inputPanel.Y = Pos.AnchorEnd(inputHeight + 1);
+                infoLayer.Height = infoLayerHeight;
+                infoLayer.Y = Pos.AnchorEnd(inputHeight + infoLayerHeight + 1);
                 if (sessionStarted) {
-                    history.Height = Dim.Fill(sessionHeaderHeight + stageHeight + inputHeight + 1);
+                    history.Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + 2);
                     history.Y = Pos.Bottom(stageLabel);
                 }
+                infoLayer.SetNeedsLayout();
                 inputPanel.SetNeedsLayout();
                 history.SetNeedsLayout();
                 startView.SetNeedsLayout();
@@ -272,6 +389,7 @@ internal static class TerminalGuiChat {
                         agent.ClearHistory();
                         historyBuffer.Clear();
                         history.Text = string.Empty;
+                        UpdateLogStyle();
                         AppendHistoryOnUi("\n(history cleared)\n");
                         return true;
                     case "/model":
@@ -305,6 +423,10 @@ internal static class TerminalGuiChat {
 
             input.KeyDown += (_, key) => {
                 if (key.KeyCode == KeyCode.Tab) {
+                    if (input.Autocomplete.Visible) {
+                        return;
+                    }
+
                     key.Handled = true;
                     input.Text += "    ";
                     return;
@@ -330,12 +452,13 @@ internal static class TerminalGuiChat {
                 }
             };
 
-            inputPanel.Add(inputHint, input, sendButton);
+            inputPanel.Add(input, sendButton);
             sessionView.Add(sessionHeader, stageLabel, history);
-            window.Add(startView, sessionView, inputPanel);
+            window.Add(startView, sessionView, infoLayer, inputPanel);
             top.Add(window);
 
             input.SetFocus();
+            UpdateLogStyle();
             ApplyLayout();
 
             Application.Run(top);
