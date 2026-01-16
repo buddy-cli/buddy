@@ -123,7 +123,7 @@ internal static class TerminalGuiChat {
             };
 
             var inputHint = new Label {
-                Text = "Type a message. Ctrl+Enter sends. Alt+Up/Down resizes input. (Esc to quit).",
+                Text = "Type a message. Ctrl+Enter sends. (Esc to quit).",
                 X = 1,
                 Y = 0
             };
@@ -285,7 +285,7 @@ internal static class TerminalGuiChat {
                             disposable.Dispose();
                         }
                         currentClient = llmClientFactory(options.Model);
-                        AppendHistoryOnUi($"\nmodel set to {options.Model}\n");
+                        AppendHistoryOnUi($"\nmodel set to {options.Model}\n");  
                         return true;
                     case "/exit":
                     case "/quit":
