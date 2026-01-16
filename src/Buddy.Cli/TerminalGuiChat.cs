@@ -9,18 +9,18 @@ internal static class TerminalGuiChat {
     public static async Task<int> RunAsync(
         BuddyAgent agent,
         ILLMClient llmClient,
+        Func<string, ILLMClient> llmClientFactory,
+        Buddy.Core.Configuration.BuddyOptions options,
         string systemPrompt,
         string? projectInstructions,
         CancellationToken cancellationToken) {
         var historyBuffer = new StringBuilder();
         var turnInFlight = false;
         CancellationTokenSource? turnCts = null;
+        var currentClient = llmClient;
 
         Application.Init();
-        var top = Application.Top;
-        if (top is null) {
-            throw new InvalidOperationException("Terminal.Gui failed to initialize the top-level view.");
-        }
+        var top = new Toplevel();
         var window = new Window {
             Title = "buddy (Esc to quit)",
             X = 0,
@@ -73,6 +73,11 @@ internal static class TerminalGuiChat {
                     return;
                 }
 
+                if (TryHandleCommand(text)) {
+                    input.Text = string.Empty;
+                    return;
+                }
+
                 turnInFlight = true;
                 input.Text = string.Empty;
                 input.Enabled = false;
@@ -84,7 +89,7 @@ internal static class TerminalGuiChat {
 
                 try {
                     await agent.RunTurnAsync(
-                        llmClient,
+                        currentClient,
                         systemPrompt,
                         projectInstructions,
                         text,
@@ -117,6 +122,51 @@ internal static class TerminalGuiChat {
                 }
             }
 
+            bool TryHandleCommand(string rawInput) {
+                if (!rawInput.StartsWith("/", StringComparison.Ordinal)) {
+                    return false;
+                }
+
+                var parts = rawInput.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var cmd = parts[0];
+                var arg = parts.Length > 1 ? parts[1] : null;
+
+                switch (cmd) {
+                    case "/help":
+                        AppendHistoryOnUi("\nCommands:\n  /help            Show this help\n  /clear           Clear conversation history\n  /model <name>    Switch model for next turns\n  /exit or /quit   Exit\n");
+                        return true;
+                    case "/clear":
+                        agent.ClearHistory();
+                        historyBuffer.Clear();
+                        history.Text = string.Empty;
+                        AppendHistoryOnUi("\n(history cleared)\n");
+                        return true;
+                    case "/model":
+                        if (string.IsNullOrWhiteSpace(arg)) {
+                            AppendHistoryOnUi($"\ncurrent model {options.Model}\n");
+                            return true;
+                        }
+
+                        options.Model = arg.Trim();
+                        if (currentClient is IDisposable disposable) {
+                            disposable.Dispose();
+                        }
+                        currentClient = llmClientFactory(options.Model);
+                        AppendHistoryOnUi($"\nmodel set to {options.Model}\n");
+                        return true;
+                    case "/exit":
+                    case "/quit":
+                        if (turnCts is not null && !turnCts.IsCancellationRequested) {
+                            turnCts.Cancel();
+                        }
+                        Application.RequestStop();
+                        return true;
+                    default:
+                        AppendHistoryOnUi("\nunknown command — try /help\n");
+                        return true;
+                }
+            }
+
             sendButton.Accepting += (_, _) => _ = SendAsync();
             sendButton.IsDefault = true;
 
@@ -126,7 +176,7 @@ internal static class TerminalGuiChat {
             input.SetFocus();
             AppendHistory("Type a message and press Enter (Esc to quit).\n\n");
 
-            Application.Run();
+            Application.Run(top);
         }
         finally {
             window.Dispose();

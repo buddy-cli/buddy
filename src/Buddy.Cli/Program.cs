@@ -47,7 +47,14 @@ CancellationTokenSource? turnCts = null;
 var exitRequested = false;
 
 if (useTui) {
-    return await TerminalGuiChat.RunAsync(agent, llmClient, systemPrompt, projectInstructions, CancellationToken.None);
+    return await TerminalGuiChat.RunAsync(
+        agent,
+        llmClient,
+        model => new OpenAiLlmClient(options.ApiKey, model, options.BaseUrl),
+        options,
+        systemPrompt,
+        projectInstructions,
+        CancellationToken.None);
 }
 
 AnsiConsole.Write(new FigletText("buddy").Color(Color.Grey));
