@@ -67,7 +67,7 @@ internal static class TerminalGuiChat {
                 X = 0,
                 Y = Pos.Bottom(header),
                 Width = Dim.Fill(),
-                Height = Dim.Fill(headerHeight + inputHeight + 3),
+                Height = Dim.Fill(headerHeight + inputHeight + 1),
                 ReadOnly = true,
                 WordWrap = true,
                 CanFocus = false,
@@ -76,9 +76,9 @@ internal static class TerminalGuiChat {
 
             var inputPanel = new View {
                 X = 0,
-                Y = Pos.AnchorEnd(inputHeight + 3),
+                Y = Pos.AnchorEnd(inputHeight + 1),
                 Width = Dim.Fill(),
-                Height = inputHeight + 3,
+                Height = inputHeight + 1,
                 CanFocus = true,
                 TabStop = TabBehavior.TabStop
             };
@@ -119,9 +119,9 @@ internal static class TerminalGuiChat {
 
             void ApplyLayout() {
                 input.Height = inputHeight;
-                inputPanel.Height = inputHeight + 3;
-                inputPanel.Y = Pos.AnchorEnd(inputHeight + 3);
-                history.Height = Dim.Fill(headerHeight + inputHeight + 3);
+                inputPanel.Height = inputHeight + 1;
+                inputPanel.Y = Pos.AnchorEnd(inputHeight + 1);
+                history.Height = Dim.Fill(headerHeight + inputHeight + 1);
                 history.Y = Pos.Bottom(header);
                 inputPanel.SetNeedsLayout();
                 history.SetNeedsLayout();
