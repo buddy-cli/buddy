@@ -41,7 +41,14 @@ Be concise, correct, and helpful.";
 var agent = host.Services.GetRequiredService<BuddyAgent>();
 ILLMClient llmClient = host.Services.GetRequiredService<ILLMClient>();
 
-return await TerminalGuiChat.RunAsync(
+using var shutdownCts = new CancellationTokenSource();
+ConsoleCancelEventHandler? cancelHandler = (_, eventArgs) => {
+    eventArgs.Cancel = true;
+    shutdownCts.Cancel();
+};
+Console.CancelKeyPress += cancelHandler;
+
+var exitCode = await TerminalGuiChat.RunAsync(
     agent,
     llmClient,
     model => new OpenAiLlmClient(options.ApiKey, model, options.BaseUrl),
@@ -49,4 +56,7 @@ return await TerminalGuiChat.RunAsync(
     version,
     systemPrompt,
     projectInstructions,
-    CancellationToken.None);
+    shutdownCts.Token);
+
+Console.CancelKeyPress -= cancelHandler;
+return exitCode;

@@ -52,7 +52,6 @@ internal static class TerminalGuiChat {
         };
 
         Application.Init();
-        var top = new Toplevel();
         var window = new Window {
             Title = "buddy (Esc to quit)",
             X = 0,
@@ -60,6 +59,7 @@ internal static class TerminalGuiChat {
             Width = Dim.Fill(),
             Height = Dim.Fill()
         };
+        using var cancellationRegistration = cancellationToken.Register(() => Application.RequestStop(window));
         try {
             var startView = new View {
                 X = 0,
@@ -311,7 +311,7 @@ internal static class TerminalGuiChat {
                 startView.SetNeedsLayout();
                 sessionView.SetNeedsLayout();
                 window.SetNeedsLayout();
-                Application.LayoutAndDraw();
+                Application.LayoutAndDraw(forceDraw: false);
             }
 
             void SetStage(string stage) {
@@ -435,7 +435,7 @@ internal static class TerminalGuiChat {
                         if (turnCts is not null && !turnCts.IsCancellationRequested) {
                             turnCts.Cancel();
                         }
-                        Application.RequestStop();
+                        Application.RequestStop(window);
                         return true;
                     default:
                         AppendHistoryOnUi("\nunknown command — try /help\n");
@@ -480,13 +480,12 @@ internal static class TerminalGuiChat {
             inputPanel.Add(input, sendButton);
             sessionView.Add(sessionHeader, stageLabel, history);
             window.Add(startView, sessionView, infoLayer, inputPanel, footer);
-            top.Add(window);
 
             input.SetFocus();
             UpdateLogStyle();
             ApplyLayout();
 
-            Application.Run(top);
+            Application.Run(window);
         }
         finally {
             window.Dispose();
