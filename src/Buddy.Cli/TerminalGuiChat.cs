@@ -53,7 +53,7 @@ internal static class TerminalGuiChat {
 
         Application.Init();
         var window = new Window {
-            Title = "buddy (Esc to quit)",
+            Title = "buddy - coding agent (Esc to quit)",
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
@@ -192,21 +192,22 @@ internal static class TerminalGuiChat {
                 Y = 0
             };
 
-            var suggestionList = new ListView {
+            var suggestionItems = new ObservableCollection<string>();
+            var suggestionOverlayRows = 0;
+
+            var suggestionOverlay = new ListView {
                 X = 1,
-                Y = 1,
-                Width = Dim.Fill(1),
+                Y = 0,
+                Width = Dim.Fill(12),
                 Height = 0,
                 CanFocus = false,
                 TabStop = TabBehavior.NoStop,
                 AllowsMarking = false,
                 Visible = false
             };
+            suggestionOverlay.SetSource(suggestionItems);
 
-            var suggestionItems = new ObservableCollection<string>();
-            suggestionList.SetSource(suggestionItems);
-
-            infoLayer.Add(inputHint, suggestionList);
+            infoLayer.Add(inputHint);
 
             var input = new TextView {
                 X = 1,
@@ -231,9 +232,9 @@ internal static class TerminalGuiChat {
 
                 if (string.IsNullOrEmpty(text) || !text.StartsWith("/"))
                 {
-                    suggestionList.Visible = false;
+                    suggestionOverlay.Visible = false;
                     suggestionItems.Clear();
-                    infoLayerHeight = infoHintHeight;
+                    suggestionOverlayRows = 0;
                     input.Autocomplete.ClearSuggestions();
                     input.Autocomplete.Visible = false;
                     ApplyLayout();
@@ -257,9 +258,9 @@ internal static class TerminalGuiChat {
                 {
                     suggestionItems.Add(match);
                 }
-                suggestionList.Height = visibleRows;
-                suggestionList.Visible = true;
-                infoLayerHeight = infoHintHeight + visibleRows;
+                suggestionOverlayRows = visibleRows;
+                suggestionOverlay.Height = visibleRows;
+                suggestionOverlay.Visible = true;
                 input.Autocomplete.Visible = false;
                 ApplyLayout();
             };
@@ -303,6 +304,12 @@ internal static class TerminalGuiChat {
                 if (sessionStarted) {
                     history.Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + footerHeight + 3);
                     history.Y = Pos.Bottom(stageLabel);
+                }
+                if (suggestionOverlay.Visible) {
+                    suggestionOverlay.X = 1;
+                    suggestionOverlay.Width = Dim.Fill(12);
+                    suggestionOverlay.Height = suggestionOverlayRows;
+                    suggestionOverlay.Y = Pos.AnchorEnd(inputHeight + footerHeight + suggestionOverlayRows + 2);
                 }
                 footer.SetNeedsLayout();
                 infoLayer.SetNeedsLayout();
@@ -479,7 +486,7 @@ internal static class TerminalGuiChat {
 
             inputPanel.Add(input, sendButton);
             sessionView.Add(sessionHeader, stageLabel, history);
-            window.Add(startView, sessionView, infoLayer, inputPanel, footer);
+            window.Add(startView, sessionView, infoLayer, inputPanel, footer, suggestionOverlay);
 
             input.SetFocus();
             UpdateLogStyle();
