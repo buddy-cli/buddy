@@ -122,7 +122,6 @@ internal static class TerminalGuiChat {
                 Y = Pos.Bottom(stageLabel),
                 Width = Dim.Fill(),
                 Height = Dim.Fill(sessionHeaderHeight + stageHeight + infoLayerHeight + inputHeight + footerHeight + 3),
-                ReadOnly = true,
                 WordWrap = true,
                 CanFocus = false,
                 TabStop = TabBehavior.NoStop
@@ -286,9 +285,12 @@ internal static class TerminalGuiChat {
 
             void AppendHistory(string text) {
                 historyBuffer.Append(text);
-                history.Text = historyBuffer.ToString();
+                history.MoveEnd();
+                history.InsertText(text);
                 UpdateLogStyle();
                 history.MoveEnd();
+                history.SetNeedsDraw();
+                Application.LayoutAndDraw(forceDraw: false);
             }
 
             void AppendHistoryOnUi(string text) {
