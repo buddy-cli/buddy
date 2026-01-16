@@ -98,23 +98,26 @@ internal static class TerminalGuiChat {
             };
 
             var sessionTitle = new Label {
-                Text = $"buddy  •  v{version}  •  model {options.Model}",
+                Text = $"buddy  • model {options.Model}",
                 X = 1,
                 Y = 0
             };
 
-            var sessionInfo = new Label {
-                Text = $"working dir {options.WorkingDirectory}",
-                X = 1,
-                Y = 1
-            };
+            sessionHeader.Add(sessionTitle);
 
-            sessionHeader.Add(sessionTitle, sessionInfo);
+            var stageSpinner = new SpinnerView {
+                X = 1,
+                Y = Pos.Bottom(sessionHeader),
+                Width = 1,
+                Height = 1,
+                AutoSpin = false,
+                Visible = false
+            };
 
             var stageLabel = new Label {
                 Text = $"Stage: {currentStage}",
-                X = 1,
-                Y = Pos.Bottom(sessionHeader)
+                X = Pos.Right(stageSpinner) + 1,
+                Y = Pos.Top(stageSpinner)
             };
 
             var history = new TextView {
@@ -325,7 +328,12 @@ internal static class TerminalGuiChat {
 
             void SetStage(string stage) {
                 currentStage = stage;
-                Application.Invoke(() => { stageLabel.Text = $"Stage: {currentStage}"; });
+                var showSpinner = stage != "Idle" && stage != "Done" && stage != "Canceled" && stage != "Error";
+                Application.Invoke(() => {
+                    stageLabel.Text = $"Stage: {currentStage}";
+                    stageSpinner.Visible = showSpinner;
+                    stageSpinner.AutoSpin = showSpinner;
+                });
             }
 
             void SwitchToSession() {
@@ -487,7 +495,7 @@ internal static class TerminalGuiChat {
             };
 
             inputPanel.Add(input, sendButton);
-            sessionView.Add(sessionHeader, stageLabel, history);
+            sessionView.Add(sessionHeader, stageSpinner, stageLabel, history);
             window.Add(startView, sessionView, infoLayer, inputPanel, footer, suggestionOverlay);
 
             input.SetFocus();
