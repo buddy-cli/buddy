@@ -67,7 +67,7 @@ internal static class TerminalGuiChat {
                 X = 0,
                 Y = Pos.Bottom(header),
                 Width = Dim.Fill(),
-                Height = Dim.Fill(headerHeight + inputHeight + 2),
+                Height = Dim.Fill(headerHeight + inputHeight + 3),
                 ReadOnly = true,
                 WordWrap = true,
                 CanFocus = false,
@@ -76,16 +76,22 @@ internal static class TerminalGuiChat {
 
             var inputPanel = new View {
                 X = 0,
-                Y = Pos.AnchorEnd(inputHeight + 2),
+                Y = Pos.AnchorEnd(inputHeight + 3),
                 Width = Dim.Fill(),
-                Height = inputHeight + 2,
+                Height = inputHeight + 3,
                 CanFocus = true,
                 TabStop = TabBehavior.TabStop
             };
 
+            var inputHint = new Label {
+                Text = "Type a message. Ctrl+Enter sends. Alt+Up/Down resizes input. (Esc to quit).",
+                X = 1,
+                Y = 0
+            };
+
             var input = new TextView {
                 X = 1,
-                Y = 0,
+                Y = 1,
                 Width = Dim.Fill(12),
                 Height = inputHeight,
                 WordWrap = true,
@@ -113,9 +119,9 @@ internal static class TerminalGuiChat {
 
             void ApplyLayout() {
                 input.Height = inputHeight;
-                inputPanel.Height = inputHeight + 2;
-                inputPanel.Y = Pos.AnchorEnd(inputHeight + 2);
-                history.Height = Dim.Fill(headerHeight + inputHeight + 2);
+                inputPanel.Height = inputHeight + 3;
+                inputPanel.Y = Pos.AnchorEnd(inputHeight + 3);
+                history.Height = Dim.Fill(headerHeight + inputHeight + 3);
                 history.Y = Pos.Bottom(header);
                 inputPanel.SetNeedsLayout();
                 history.SetNeedsLayout();
@@ -257,12 +263,11 @@ internal static class TerminalGuiChat {
                 }
             };
 
-            inputPanel.Add(input, sendButton);
+            inputPanel.Add(inputHint, input, sendButton);
             window.Add(header, history, inputPanel);
             top.Add(window);
 
             input.SetFocus();
-            AppendHistory("Type a message. Ctrl+Enter sends. Alt+Up/Down resizes input. (Esc to quit).\n\n");
             ApplyLayout();
 
             Application.Run(top);
