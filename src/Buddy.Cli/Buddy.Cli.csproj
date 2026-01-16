@@ -12,6 +12,7 @@
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="DotNetEnv" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Terminal.Gui" />
   </ItemGroup>
 
   <ItemGroup>

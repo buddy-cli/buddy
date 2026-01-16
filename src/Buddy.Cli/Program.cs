@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Buddy.Cli;
 using Buddy.Cli.Commands;
 using Buddy.Core.Agents;
 using Buddy.Core.Application;
@@ -24,6 +25,7 @@ var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "
 var workingDirectory = Environment.CurrentDirectory;
 var currentDate = DateTimeOffset.Now;
 var osEnvironment = $"{RuntimeInformation.OSDescription} ({RuntimeInformation.OSArchitecture})";
+var useTui = args.Any(arg => string.Equals(arg, "--tui", StringComparison.OrdinalIgnoreCase));
 
 var options = BuddyOptionsLoader.Load(workingDirectory, args);
 var projectInstructions = ProjectInstructionsLoader.Load(workingDirectory);
@@ -31,14 +33,6 @@ var projectInstructions = ProjectInstructionsLoader.Load(workingDirectory);
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddBuddyCore(options);
 using var host = builder.Build();
-
-AnsiConsole.Write(new FigletText("buddy").Color(Color.Grey));
-AnsiConsole.MarkupLine("[bold]buddy coding agent[/]");
-AnsiConsole.MarkupLine($"version {version}");
-AnsiConsole.MarkupLine($"model [bold]{options.Model}[/] • base url [grey]{options.BaseUrl ?? "(default)"}[/]");
-AnsiConsole.MarkupLine($"working dir {workingDirectory}");
-AnsiConsole.WriteLine("Type a message to chat.");
-AnsiConsole.MarkupLine("[grey]Use /help for commands. Press Ctrl+Enter or Shift+Enter for a newline.[/]");
 
 var systemPrompt = $@"You are buddy, a research-grade coding agent. 
 Your job is to assist the user with programming tasks. 
@@ -51,6 +45,18 @@ var agent = host.Services.GetRequiredService<BuddyAgent>();
 ILLMClient llmClient = host.Services.GetRequiredService<ILLMClient>();
 CancellationTokenSource? turnCts = null;
 var exitRequested = false;
+
+if (useTui) {
+    return await TerminalGuiChat.RunAsync(agent, llmClient, systemPrompt, projectInstructions, CancellationToken.None);
+}
+
+AnsiConsole.Write(new FigletText("buddy").Color(Color.Grey));
+AnsiConsole.MarkupLine("[bold]buddy coding agent[/]");
+AnsiConsole.MarkupLine($"version {version}");
+AnsiConsole.MarkupLine($"model [bold]{options.Model}[/] • base url [grey]{options.BaseUrl ?? "(default)"}[/]");
+AnsiConsole.MarkupLine($"working dir {workingDirectory}");
+AnsiConsole.WriteLine("Type a message to chat.");
+AnsiConsole.MarkupLine("[grey]Use /help for commands. Press Ctrl+Enter or Shift+Enter for a newline.[/]");
 
 var commandRegistry = new SlashCommandRegistry();
 commandRegistry.Register(new SlashCommand("/help", "Show help"));
