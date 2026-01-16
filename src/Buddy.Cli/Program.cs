@@ -52,6 +52,7 @@ if (useTui) {
         llmClient,
         model => new OpenAiLlmClient(options.ApiKey, model, options.BaseUrl),
         options,
+        version,
         systemPrompt,
         projectInstructions,
         CancellationToken.None);

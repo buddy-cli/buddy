@@ -11,6 +11,7 @@ internal static class TerminalGuiChat {
         ILLMClient llmClient,
         Func<string, ILLMClient> llmClientFactory,
         Buddy.Core.Configuration.BuddyOptions options,
+        string version,
         string systemPrompt,
         string? projectInstructions,
         CancellationToken cancellationToken) {
@@ -18,6 +19,18 @@ internal static class TerminalGuiChat {
         var turnInFlight = false;
         CancellationTokenSource? turnCts = null;
         var currentClient = llmClient;
+        var bannerText = string.Join("\n", new[] {
+            "██████╗ ██╗   ██╗██████╗ ██████╗ ██╗   ██╗",
+            "██╔══██╗██║   ██║██╔══██╗██╔══██╗╚██╗ ██╔╝",
+            "██████╔╝██║   ██║██║  ██║██║  ██║ ╚████╔╝ ",
+            "██╔══██╗██║   ██║██║  ██║██║  ██║  ╚██╔╝  ",
+            "██████╔╝╚██████╔╝██████╔╝██████╔╝   ██║   ",
+            "╚═════╝  ╚═════╝ ╚═════╝ ╚═════╝    ╚═╝   "
+        });
+        var bannerLines = bannerText.Split('\n').Length;
+        var infoLines = 2;
+        var headerHeight = bannerLines + infoLines;
+        var inputHeight = 3;
 
         Application.Init();
         var top = new Toplevel();
@@ -29,28 +42,63 @@ internal static class TerminalGuiChat {
             Height = Dim.Fill()
         };
         try {
-
-            var history = new TextView {
+            var header = new View {
                 X = 0,
                 Y = 0,
                 Width = Dim.Fill(),
-                Height = Dim.Fill(2),
-                ReadOnly = true,
-                WordWrap = true
+                Height = headerHeight
             };
 
-            var input = new TextField {
-                Text = "",
+            var headerTitle = new Label {
+                Text = bannerText,
+                X = 1,
+                Y = 0
+            };
+
+            var headerInfo = new Label {
+                Text = $"version {version}  •  model {options.Model}  •  base url {options.BaseUrl ?? "(default)"}\nworking dir {options.WorkingDirectory}",
+                X = 1,
+                Y = bannerLines
+            };
+
+            header.Add(headerTitle, headerInfo);
+
+            var history = new TextView {
                 X = 0,
-                Y = Pos.Bottom(history),
+                Y = Pos.Bottom(header),
+                Width = Dim.Fill(),
+                Height = Dim.Fill(headerHeight + inputHeight + 2),
+                ReadOnly = true,
+                WordWrap = true,
+                CanFocus = false,
+                TabStop = TabBehavior.NoStop
+            };
+
+            var inputPanel = new View {
+                X = 0,
+                Y = Pos.AnchorEnd(inputHeight + 2),
+                Width = Dim.Fill(),
+                Height = inputHeight + 2,
+                CanFocus = true,
+                TabStop = TabBehavior.TabStop
+            };
+
+            var input = new TextView {
+                X = 1,
+                Y = 0,
                 Width = Dim.Fill(12),
-                Height = 1
+                Height = inputHeight,
+                WordWrap = true,
+                CanFocus = true,
+                TabStop = TabBehavior.TabStop
             };
 
             var sendButton = new Button {
                 Text = "Send",
-                X = Pos.Right(input) + 1,
-                Y = Pos.Bottom(history)
+                X = Pos.AnchorEnd(10),
+                Y = Pos.Bottom(input) - 1,
+                CanFocus = true,
+                TabStop = TabBehavior.TabStop
             };
 
             void AppendHistory(string text) {
@@ -61,6 +109,18 @@ internal static class TerminalGuiChat {
 
             void AppendHistoryOnUi(string text) {
                 Application.Invoke(() => AppendHistory(text));
+            }
+
+            void ApplyLayout() {
+                input.Height = inputHeight;
+                inputPanel.Height = inputHeight + 2;
+                inputPanel.Y = Pos.AnchorEnd(inputHeight + 2);
+                history.Height = Dim.Fill(headerHeight + inputHeight + 2);
+                history.Y = Pos.Bottom(header);
+                inputPanel.SetNeedsLayout();
+                history.SetNeedsLayout();
+                window.SetNeedsLayout();
+                Application.LayoutAndDraw();
             }
 
             async Task SendAsync() {
@@ -170,11 +230,40 @@ internal static class TerminalGuiChat {
             sendButton.Accepting += (_, _) => _ = SendAsync();
             sendButton.IsDefault = true;
 
-            window.Add(history, input, sendButton);
+            input.KeyDown += (_, key) => {
+                if (key.KeyCode == KeyCode.Tab) {
+                    key.Handled = true;
+                    input.Text += "    ";
+                    return;
+                }
+
+                if (key.IsAlt && key.KeyCode == KeyCode.CursorUp) {
+                    key.Handled = true;
+                    inputHeight = Math.Min(10, inputHeight + 1);
+                    ApplyLayout();
+                    return;
+                }
+
+                if (key.IsAlt && key.KeyCode == KeyCode.CursorDown) {
+                    key.Handled = true;
+                    inputHeight = Math.Max(2, inputHeight - 1);
+                    ApplyLayout();
+                    return;
+                }
+
+                if (key.IsCtrl && key.KeyCode == KeyCode.Enter) {
+                    key.Handled = true;
+                    _ = SendAsync();
+                }
+            };
+
+            inputPanel.Add(input, sendButton);
+            window.Add(header, history, inputPanel);
             top.Add(window);
 
             input.SetFocus();
-            AppendHistory("Type a message and press Enter (Esc to quit).\n\n");
+            AppendHistory("Type a message. Ctrl+Enter sends. Alt+Up/Down resizes input. (Esc to quit).\n\n");
+            ApplyLayout();
 
             Application.Run(top);
         }
