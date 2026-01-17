@@ -27,7 +27,7 @@ public sealed class GlobTool : ITool {
     }
 
     public string Name => "glob";
-    public string Description => "Find files by name pattern. Use this FIRST when looking for a specific file or project (e.g., '**/folder-name/**' or '**/*.txt'). Supports ** for recursive matching. Returns paths sorted by modification time (newest first).";
+    public string Description => "Find files by name pattern. ALWAYS use a specific pattern - NEVER use '**/*'. Examples: '**/myproject/**' finds all files in myproject folder, '**/README.md' finds README.md anywhere, '**/*.json' finds all JSON files. Note: '**/foo*' matches file NAMES starting with 'foo', not folder contents - use '**/foo/**' for folder contents.";
     public JsonElement ParameterSchema => Schema;
 
     public Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {
