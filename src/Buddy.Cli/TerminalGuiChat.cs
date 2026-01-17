@@ -21,7 +21,7 @@ internal static class TerminalGuiChat {
             SessionHeaderHeight: 2,
             StageHeight: 1,
             InfoLayerHeight: 1,
-            FooterHeight: 1);
+            FooterHeight: 2);
 
         // Define available slash commands
         var slashCommands = new List<SlashCommandOption>

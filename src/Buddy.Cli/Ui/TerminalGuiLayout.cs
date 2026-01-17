@@ -46,13 +46,7 @@ internal static class TerminalGuiLayout {
             Y = 0
         };
 
-        var headerInfo = new Label {
-            Text = $"model {options.Model}  •  base url {options.BaseUrl ?? "(default)"}",
-            X = 1,
-            Y = bannerLines
-        };
-
-        startView.Add(headerTitle, headerInfo);
+        startView.Add(headerTitle);
 
         var sessionView = new View {
             X = 0,
@@ -70,7 +64,7 @@ internal static class TerminalGuiLayout {
         };
 
         var sessionTitle = new Label {
-            Text = $"buddy  • model {options.Model}",
+            Text = "buddy",
             X = 1,
             Y = 0
         };
@@ -129,19 +123,25 @@ internal static class TerminalGuiLayout {
             TabStop = TabBehavior.NoStop
         };
 
+        var footerProvider = new Label {
+            Text = $"provider {GetProviderLabel(options)}  •  model {GetModelLabel(options)}",
+            X = 1,
+            Y = 0
+        };
+
         var footerLeft = new Label {
             Text = options.WorkingDirectory,
             X = 1,
-            Y = 0
+            Y = 1
         };
 
         var footerRight = new Label {
             Text = version,
             X = Pos.AnchorEnd(version.Length + 1),
-            Y = 0
+            Y = 1
         };
 
-        footer.Add(footerLeft, footerRight);
+        footer.Add(footerProvider, footerLeft, footerRight);
 
         var inputHint = new Label {
             Text = "Type a message or /command (e.g., /help) ",
@@ -198,5 +198,30 @@ internal static class TerminalGuiLayout {
             suggestionOverlay,
             input,
             sendButton);
+    }
+
+    private static string GetProviderLabel(BuddyOptions options) {
+        if (options.Providers.Count == 0) {
+            return "(none)";
+        }
+
+        return string.IsNullOrWhiteSpace(options.Providers[0].Name)
+            ? "(unnamed)"
+            : options.Providers[0].Name;
+    }
+
+    private static string GetModelLabel(BuddyOptions options) {
+        if (options.Providers.Count == 0) {
+            return options.Model;
+        }
+
+        var provider = options.Providers[0];
+        if (provider.Models.Count == 0) {
+            return options.Model;
+        }
+
+        return string.IsNullOrWhiteSpace(provider.Models[0].Name)
+            ? provider.Models[0].System
+            : provider.Models[0].Name;
     }
 }
