@@ -2,6 +2,7 @@ using Buddy.Core.Agents;
 using Buddy.Core.Configuration;
 using Buddy.Core.Tooling;
 using Buddy.Core.Tools;
+using Buddy.Core.Worktree;
 using Buddy.LLM;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -14,6 +15,10 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IOptions<BuddyOptions>>(_ => Options.Create(options));
 
         services.AddSingleton<ILLMClient>(_ => new OpenAiLlmClient(options.ApiKey, options.Model, options.BaseUrl));
+        services.AddSingleton<ILLMClientFactory, OpenAiLlmClientFactory>();
+
+        services.AddSingleton<ISystemPromptBuilder, SystemPromptBuilder>();
+        services.AddSingleton<IWorktreeSnapshotProvider, WorktreeSnapshotProvider>();
 
         services.AddSingleton<ITool, ReadFileTool>();
         services.AddSingleton<ITool, WriteFileTool>();

@@ -1,5 +1,6 @@
 using Buddy.Core.Agents;
 using Buddy.Core.Configuration;
+using Buddy.Core.Application;
 using Buddy.LLM;
 using Terminal.Gui;
 
@@ -7,44 +8,26 @@ namespace Buddy.Cli.Ui;
 
 internal sealed class ChatController {
     private readonly BuddyAgent _agent;
-    private readonly Func<string, ILLMClient> _llmClientFactory;
-    private readonly BuddyOptions _options;
-    private readonly string _systemPrompt;
-    private readonly string? _projectInstructions;
-    private readonly ChatSessionState _state;
-    private readonly ChatLayoutParts _parts;
+    private readonly ILLMClientFactory _llmClientFactory;
     private readonly ChatLayoutManager _layoutManager;
-    private readonly ColorScheme _idleLogScheme;
-    private readonly ColorScheme _activeLogScheme;
-    private readonly string _version;
+    private readonly ChatSessionState _state;
+    private readonly ChatControllerContext _context;
 
     public ChatController(
         BuddyAgent agent,
-        Func<string, ILLMClient> llmClientFactory,
-        BuddyOptions options,
-        string systemPrompt,
-        string? projectInstructions,
-        ChatSessionState state,
-        ChatLayoutParts parts,
+        ILLMClientFactory llmClientFactory,
         ChatLayoutManager layoutManager,
-        ColorScheme idleLogScheme,
-        ColorScheme activeLogScheme,
-        string version) {
+        ChatSessionState state,
+        ChatControllerContext context) {
         _agent = agent;
         _llmClientFactory = llmClientFactory;
-        _options = options;
-        _systemPrompt = systemPrompt;
-        _projectInstructions = projectInstructions;
-        _state = state;
-        _parts = parts;
         _layoutManager = layoutManager;
-        _idleLogScheme = idleLogScheme;
-        _activeLogScheme = activeLogScheme;
-        _version = version;
+        _state = state;
+        _context = context;
     }
 
     public void UpdateLogStyle() {
-        _parts.History.ColorScheme = _state.HistoryBuffer.Length == 0 ? _idleLogScheme : _activeLogScheme;
+        _context.LayoutParts.History.ColorScheme = _state.HistoryBuffer.Length == 0 ? _context.IdleLogScheme : _context.ActiveLogScheme;
     }
 
     public async Task SendAsync() {
@@ -52,20 +35,20 @@ internal sealed class ChatController {
             return;
         }
 
-        var text = _parts.Input.Text?.ToString() ?? string.Empty;
+        var text = _context.LayoutParts.Input.Text?.ToString() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(text)) {
             return;
         }
 
         if (TryHandleCommand(text)) {
-            _parts.Input.Text = string.Empty;
+            _context.LayoutParts.Input.Text = string.Empty;
             return;
         }
 
         _state.TurnInFlight = true;
-        _parts.Input.Text = string.Empty;
-        _parts.Input.Enabled = false;
-        _parts.SendButton.Enabled = false;
+        _context.LayoutParts.Input.Text = string.Empty;
+        _context.LayoutParts.Input.Enabled = false;
+        _context.LayoutParts.SendButton.Enabled = false;
 
         SwitchToSession();
         SetStage("Planning");
@@ -77,8 +60,8 @@ internal sealed class ChatController {
         try {
             await _agent.RunTurnAsync(
                 _state.CurrentClient,
-                _systemPrompt,
-                _projectInstructions,
+                _context.SystemPrompt,
+                _context.ProjectInstructions,
                 text,
                 onTextDelta: delta => {
                     SetStage("Responding");
@@ -107,20 +90,21 @@ internal sealed class ChatController {
             _state.TurnCts = null;
             _state.TurnInFlight = false;
             Application.Invoke(() => {
-                _parts.Input.Enabled = true;
-                _parts.SendButton.Enabled = true;
-                _parts.Input.SetFocus();
+                _context.LayoutParts.Input.Enabled = true;
+                _context.LayoutParts.SendButton.Enabled = true;
+                _context.LayoutParts.Input.SetFocus();
             });
+
         }
     }
 
     private void AppendHistory(string text) {
         _state.HistoryBuffer.Append(text);
-        _parts.History.MoveEnd();
-        _parts.History.InsertText(text);
+        _context.LayoutParts.History.MoveEnd();
+        _context.LayoutParts.History.InsertText(text);
         UpdateLogStyle();
-        _parts.History.MoveEnd();
-        _parts.History.SetNeedsDraw();
+        _context.LayoutParts.History.MoveEnd();
+        _context.LayoutParts.History.SetNeedsDraw();
         Application.LayoutAndDraw(forceDraw: false);
     }
 
@@ -132,9 +116,9 @@ internal sealed class ChatController {
         _state.CurrentStage = stage;
         var showSpinner = stage != "Idle" && stage != "Done" && stage != "Canceled" && stage != "Error";
         Application.Invoke(() => {
-            _parts.StageLabel.Text = $"Stage: {_state.CurrentStage}";
-            _parts.StageSpinner.Visible = showSpinner;
-            _parts.StageSpinner.AutoSpin = showSpinner;
+            _context.LayoutParts.StageLabel.Text = $"Stage: {_state.CurrentStage}";
+            _context.LayoutParts.StageSpinner.Visible = showSpinner;
+            _context.LayoutParts.StageSpinner.AutoSpin = showSpinner;
         });
     }
 
@@ -144,9 +128,9 @@ internal sealed class ChatController {
         }
 
         _state.SessionStarted = true;
-        _parts.StartView.Visible = false;
-        _parts.SessionView.Visible = true;
-        _layoutManager.ApplyLayout(_state, _parts);
+        _context.LayoutParts.StartView.Visible = false;
+        _context.LayoutParts.SessionView.Visible = true;
+        _layoutManager.ApplyLayout(_state, _context.LayoutParts);
     }
 
     private bool TryHandleCommand(string rawInput) {
@@ -165,7 +149,7 @@ internal sealed class ChatController {
             case "/clear":
                 _agent.ClearHistory();
                 _state.HistoryBuffer.Clear();
-                _parts.History.Text = string.Empty;
+                _context.LayoutParts.History.Text = string.Empty;
                 UpdateLogStyle();
                 AppendHistoryOnUi("\n(history cleared)\n");
                 return true;
@@ -180,7 +164,7 @@ internal sealed class ChatController {
                 if (_state.TurnCts is not null && !_state.TurnCts.IsCancellationRequested) {
                     _state.TurnCts.Cancel();
                 }
-                Application.RequestStop(_parts.Window);
+                Application.RequestStop(_context.LayoutParts.Window);
                 return true;
             default:
                 AppendHistoryOnUi("\nunknown command — try /help\n");
@@ -188,21 +172,46 @@ internal sealed class ChatController {
         }
     }
 
-    private void ShowProviderDialog() {
-        if (!ProviderConfigDialog.TryEditProviders(_options.Providers, out var updatedProviders)) {
+    private void ShowModelDialog() {
+        if (!ModelSelectionDialog.TrySelectModel(_context.Options.Providers, out var providerIndex, out var modelIndex)) {
             return;
         }
 
-        _options.Providers = updatedProviders;
-        BuddyOptionsLoader.ApplyPrimaryProviderDefaults(_options);
+        var provider = _context.Options.Providers[providerIndex];
+        var model = provider.Models[modelIndex];
+
+        _context.Options.Model = model.System;
+        _context.Options.BaseUrl = provider.BaseUrl;
+        _context.Options.ApiKey = provider.ApiKey;
 
         if (_state.CurrentClient is IDisposable disposable) {
             disposable.Dispose();
         }
 
-        _state.CurrentClient = _llmClientFactory(_options.Model);
+        _state.CurrentClient = _llmClientFactory.Create(_context.Options.Model);
+
+        TerminalGuiLayout.RefreshFooter(_context.Options, _context.Version, _context.LayoutParts);
+        Application.LayoutAndDraw(forceDraw: false);
+
+        AppendHistoryOnUi($"\nmodel set to {_context.Options.Model}\n");
+    }
+
+    private void ShowProviderDialog() {
+        if (!ProviderConfigDialog.TryEditProviders(_context.Options.Providers, out var updatedProviders)) {
+            return;
+        }
+
+        _context.Options.Providers = updatedProviders;
+        BuddyOptionsLoader.ApplyPrimaryProviderDefaults(_context.Options);
+
+        if (_state.CurrentClient is IDisposable disposable) {
+            disposable.Dispose();
+        }
+
+        _state.CurrentClient = _llmClientFactory.Create(_context.Options.Model);
 
         var saved = true;
+
         try {
             var configPath = BuddyOptionsLoader.ResolveConfigPath();
             BuddyOptionsLoader.Save(configPath, new BuddyConfigFile { Providers = updatedProviders });
@@ -212,37 +221,10 @@ internal sealed class ChatController {
             AppendHistoryOnUi($"\nfailed to save provider config: {ex.Message}\n");
         }
 
-        TerminalGuiLayout.RefreshFooter(_options, _version, _parts);
+        TerminalGuiLayout.RefreshFooter(_context.Options, _context.Version, _context.LayoutParts);
         Application.LayoutAndDraw(forceDraw: false);
-        if (saved) {
-            AppendHistoryOnUi("\n(provider configuration saved)\n");
-        }
-    }
 
-    private void ShowModelDialog() {
-        if (_options.Providers.Count == 0) {
-            AppendHistoryOnUi("\nno providers configured\n");
-            return;
-        }
-
-        if (!ModelSelectionDialog.TrySelectModel(_options.Providers, out var providerIndex, out var modelIndex)) {
-            return;
-        }
-
-        var provider = _options.Providers[providerIndex];
-        var model = provider.Models[modelIndex];
-        _options.Model = model.System;
-        _options.ApiKey = provider.ApiKey;
-        _options.BaseUrl = provider.BaseUrl;
-
-        if (_state.CurrentClient is IDisposable disposable) {
-            disposable.Dispose();
-        }
-
-        _state.CurrentClient = _llmClientFactory(_options.Model);
-        TerminalGuiLayout.RefreshFooter(_options, _version, _parts);
-        Application.LayoutAndDraw(forceDraw: false);
-        AppendHistoryOnUi($"\nmodel set to {_options.Model}\n");
+        AppendHistoryOnUi($"\nmodel set to {_context.Options.Model}\n");
     }
 }
 

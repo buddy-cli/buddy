@@ -1,13 +1,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Buddy.Cli;
-using Buddy.Core.Agents;
+using Buddy.Cli.Extensions;
 using Buddy.Core.Application;
 using Buddy.Core.Configuration;
 using Buddy.Core.Instructions;
 using Buddy.Core.Worktree;
-using WorktreeSnapshot = Buddy.Cli.WorktreeSnapshot;
-using Buddy.LLM;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -21,28 +19,20 @@ var projectInstructions = ProjectInstructionsLoader.Load(workingDirectory);
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddBuddyCore(options);
+builder.Services.AddBuddyCli();
 using var host = builder.Build();
 
-var worktreeSnapshot = Buddy.Cli.WorktreeSnapshot.Build(workingDirectory);
+var worktreeSnapshotProvider = host.Services.GetRequiredService<IWorktreeSnapshotProvider>();
+var worktreeSnapshot = worktreeSnapshotProvider.Build(workingDirectory);
 
-var systemPrompt = $"""
-[Role]
-You are buddy, a research-grade coding agent.
-Your job is to assist the user with programming tasks.
-Be concise, correct, and helpful.
-<context>
-Current date: {currentDate:yyyy-MM-dd}.
-OS environment: {osEnvironment}.
-</context>
-<workingDir>
-Current working directory: {workingDirectory}.
+var systemPromptBuilder = host.Services.GetRequiredService<ISystemPromptBuilder>();
+var systemPrompt = systemPromptBuilder.Build(options, currentDate, osEnvironment)
+    + $"""
+<ProjectWorktree>
 Project worktree:
 {worktreeSnapshot}
-</workingDir>
+</ProjectWorktree>
 """;
-
-var agent = host.Services.GetRequiredService<BuddyAgent>();
-ILLMClient llmClient = host.Services.GetRequiredService<ILLMClient>();
 
 using var shutdownCts = new CancellationTokenSource();
 ConsoleCancelEventHandler? cancelHandler = (_, eventArgs) => {
@@ -51,15 +41,13 @@ ConsoleCancelEventHandler? cancelHandler = (_, eventArgs) => {
 };
 Console.CancelKeyPress += cancelHandler;
 
-var exitCode = await TerminalGuiChat.RunAsync(
-    agent,
-    llmClient,
-    model => new OpenAiLlmClient(options.ApiKey, model, options.BaseUrl),
-    options,
+var chatApplication = new ChatApplicationFactory(host.Services).Create(
     version,
     systemPrompt,
     projectInstructions,
     shutdownCts.Token);
+
+var exitCode = await chatApplication.RunAsync();
 
 Console.CancelKeyPress -= cancelHandler;
 return exitCode;
