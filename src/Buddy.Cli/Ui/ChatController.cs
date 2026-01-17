@@ -16,6 +16,7 @@ internal sealed class ChatController {
     private readonly ChatLayoutManager _layoutManager;
     private readonly ColorScheme _idleLogScheme;
     private readonly ColorScheme _activeLogScheme;
+    private readonly string _version;
 
     public ChatController(
         BuddyAgent agent,
@@ -27,7 +28,8 @@ internal sealed class ChatController {
         ChatLayoutParts parts,
         ChatLayoutManager layoutManager,
         ColorScheme idleLogScheme,
-        ColorScheme activeLogScheme) {
+        ColorScheme activeLogScheme,
+        string version) {
         _agent = agent;
         _llmClientFactory = llmClientFactory;
         _options = options;
@@ -38,6 +40,7 @@ internal sealed class ChatController {
         _layoutManager = layoutManager;
         _idleLogScheme = idleLogScheme;
         _activeLogScheme = activeLogScheme;
+        _version = version;
     }
 
     public void UpdateLogStyle() {
@@ -157,7 +160,7 @@ internal sealed class ChatController {
 
         switch (cmd) {
             case "/help":
-                AppendHistoryOnUi("\nCommands:\n  /help            Show this help\n  /clear           Clear conversation history\n  /model <name>    Switch model for next turns\n  /exit or /quit   Exit\n");
+                AppendHistoryOnUi("\nCommands:\n  /help             Show this help\n  /clear            Clear conversation history\n  /model <name>     Switch model for next turns\n  /provider         Edit provider configuration\n  /exit or /quit    Exit\n");
                 return true;
             case "/clear":
                 _agent.ClearHistory();
@@ -179,6 +182,9 @@ internal sealed class ChatController {
                 _state.CurrentClient = _llmClientFactory(_options.Model);
                 AppendHistoryOnUi($"\nmodel set to {_options.Model}\n");
                 return true;
+            case "/provider":
+                ShowProviderDialog();
+                return true;
             case "/exit":
             case "/quit":
                 if (_state.TurnCts is not null && !_state.TurnCts.IsCancellationRequested) {
@@ -189,6 +195,37 @@ internal sealed class ChatController {
             default:
                 AppendHistoryOnUi("\nunknown command — try /help\n");
                 return true;
+        }
+    }
+
+    private void ShowProviderDialog() {
+        if (!ProviderConfigDialog.TryEditProviders(_options.Providers, out var updatedProviders)) {
+            return;
+        }
+
+        _options.Providers = updatedProviders;
+        BuddyOptionsLoader.ApplyPrimaryProviderDefaults(_options);
+
+        if (_state.CurrentClient is IDisposable disposable) {
+            disposable.Dispose();
+        }
+
+        _state.CurrentClient = _llmClientFactory(_options.Model);
+
+        var saved = true;
+        try {
+            var configPath = BuddyOptionsLoader.ResolveConfigPath();
+            BuddyOptionsLoader.Save(configPath, new BuddyConfigFile { Providers = updatedProviders });
+        }
+        catch (Exception ex) {
+            saved = false;
+            AppendHistoryOnUi($"\nfailed to save provider config: {ex.Message}\n");
+        }
+
+        TerminalGuiLayout.RefreshFooter(_options, _version, _parts);
+        Application.LayoutAndDraw(forceDraw: false);
+        if (saved) {
+            AppendHistoryOnUi("\n(provider configuration saved)\n");
         }
     }
 }

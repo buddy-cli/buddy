@@ -31,7 +31,7 @@ public static class BuddyOptionsLoader {
         return options;
     }
 
-    private static void ApplyPrimaryProviderDefaults(BuddyOptions options) {
+    public static void ApplyPrimaryProviderDefaults(BuddyOptions options) {
         if (options.Providers.Count == 0) {
             return;
         }
@@ -47,9 +47,24 @@ public static class BuddyOptionsLoader {
         options.Model = provider.Models[0].System;
     }
 
-    private static string ResolveConfigPath() {
+    public static string ResolveConfigPath() {
         var homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         return Path.Combine(homeDirectory, ".buddy", "config.json");
+    }
+
+    public static void Save(string configPath, BuddyConfigFile config) {
+        var directory = Path.GetDirectoryName(configPath);
+        if (!string.IsNullOrWhiteSpace(directory)) {
+            Directory.CreateDirectory(directory);
+        }
+
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            config,
+            new System.Text.Json.JsonSerializerOptions {
+                WriteIndented = true
+            });
+
+        File.WriteAllText(configPath, json);
     }
 
     private static void EnsureConfigExists(string configPath) {
@@ -57,22 +72,7 @@ public static class BuddyOptionsLoader {
             return;
         }
 
-        var directory = Path.GetDirectoryName(configPath);
-        if (!string.IsNullOrWhiteSpace(directory)) {
-            Directory.CreateDirectory(directory);
-        }
-
-        var defaultConfig = new BuddyConfigFile {
-            Providers = new List<LlmProviderConfig>()
-        };
-
-        var json = System.Text.Json.JsonSerializer.Serialize(
-            defaultConfig,
-            new System.Text.Json.JsonSerializerOptions {
-                WriteIndented = true
-            });
-
-        File.WriteAllText(configPath, json);
+        Save(configPath, new BuddyConfigFile { Providers = new List<LlmProviderConfig>() });
     }
 }
 

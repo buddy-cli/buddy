@@ -13,6 +13,9 @@ internal sealed class ChatLayoutParts {
         View inputPanel,
         View infoLayer,
         View footer,
+        Label footerProvider,
+        Label footerLeft,
+        Label footerRight,
         ListView suggestionOverlay,
         TextView input,
         Button sendButton) {
@@ -25,6 +28,9 @@ internal sealed class ChatLayoutParts {
         InputPanel = inputPanel;
         InfoLayer = infoLayer;
         Footer = footer;
+        FooterProvider = footerProvider;
+        FooterLeft = footerLeft;
+        FooterRight = footerRight;
         SuggestionOverlay = suggestionOverlay;
         Input = input;
         SendButton = sendButton;
@@ -47,6 +53,12 @@ internal sealed class ChatLayoutParts {
     public View InfoLayer { get; }
 
     public View Footer { get; }
+
+    public Label FooterProvider { get; }
+
+    public Label FooterLeft { get; }
+
+    public Label FooterRight { get; }
 
     public ListView SuggestionOverlay { get; }
 

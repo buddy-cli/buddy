@@ -14,6 +14,39 @@ internal static class TerminalGuiLayout {
         "╚═════╝  ╚═════╝ ╚═════╝ ╚═════╝    ╚═╝   "
     });
 
+    public static string GetProviderLabel(BuddyOptions options) {
+        if (options.Providers.Count == 0) {
+            return "(none)";
+        }
+
+        return string.IsNullOrWhiteSpace(options.Providers[0].Name)
+            ? "(unnamed)"
+            : options.Providers[0].Name;
+    }
+
+    public static string GetModelLabel(BuddyOptions options) {
+        if (options.Providers.Count == 0) {
+            return options.Model;
+        }
+
+        var provider = options.Providers[0];
+        if (provider.Models.Count == 0) {
+            return options.Model;
+        }
+
+        return string.IsNullOrWhiteSpace(provider.Models[0].Name)
+            ? provider.Models[0].System
+            : provider.Models[0].Name;
+    }
+
+    public static void RefreshFooter(BuddyOptions options, string version, ChatLayoutParts parts) {
+        parts.FooterProvider.Text = $"provider {GetProviderLabel(options)}  •  model {GetModelLabel(options)}";
+        parts.FooterLeft.Text = options.WorkingDirectory;
+        parts.FooterRight.Text = version;
+        parts.FooterRight.X = Pos.AnchorEnd(version.Length + 1);
+        parts.Footer.SetNeedsDraw();
+    }
+
     public static int BannerLines => BannerText.Split('\n').Length;
 
     public static ChatLayoutParts Build(
@@ -195,33 +228,12 @@ internal static class TerminalGuiLayout {
             inputPanel,
             infoLayer,
             footer,
+            footerProvider,
+            footerLeft,
+            footerRight,
             suggestionOverlay,
             input,
             sendButton);
     }
 
-    private static string GetProviderLabel(BuddyOptions options) {
-        if (options.Providers.Count == 0) {
-            return "(none)";
-        }
-
-        return string.IsNullOrWhiteSpace(options.Providers[0].Name)
-            ? "(unnamed)"
-            : options.Providers[0].Name;
-    }
-
-    private static string GetModelLabel(BuddyOptions options) {
-        if (options.Providers.Count == 0) {
-            return options.Model;
-        }
-
-        var provider = options.Providers[0];
-        if (provider.Models.Count == 0) {
-            return options.Model;
-        }
-
-        return string.IsNullOrWhiteSpace(provider.Models[0].Name)
-            ? provider.Models[0].System
-            : provider.Models[0].Name;
-    }
 }
