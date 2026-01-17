@@ -26,7 +26,7 @@ public sealed class EditFileTool : ITool {
     }
 
     public string Name => "edit_file";
-    public string Description => "Edit a file by replacing exact text. The 'search' must match exactly (including whitespace). Include surrounding context lines in 'search' to ensure uniqueness. All occurrences are replaced. Read the file first to get the exact text.";
+    public string Description => "Edit a file by replacing exact text. The 'search' must match exactly (including whitespace). Include surrounding context lines in 'search' to ensure uniqueness. All occurrences are replaced. Read the file first to get the exact text. ESCAPE NOTE: JSON escaping applies - to get a literal backslash in the file, send '\\\\' (two backslashes) in the JSON value. For C# format strings like 'hh\\\\:mm' (double backslash in file), send 4 backslashes in JSON.";
     public JsonElement ParameterSchema => Schema;
 
     public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {
