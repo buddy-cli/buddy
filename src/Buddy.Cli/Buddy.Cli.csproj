@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="Spectre.Console" />
-    <PackageReference Include="DotNetEnv" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Terminal.Gui" />
   </ItemGroup>

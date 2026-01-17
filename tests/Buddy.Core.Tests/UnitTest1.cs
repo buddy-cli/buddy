@@ -1,36 +1,48 @@
-﻿using Buddy.Core.Configuration;
+using Buddy.Core.Configuration;
 
 namespace Buddy.Core.Tests;
 
 public sealed class BuddyOptionsLoaderTests {
     [Fact]
-    public void Loads_from_environment_variables() {
-        var original = Environment.GetEnvironmentVariable("BUDDY_MODEL");
-        try {
-            Environment.SetEnvironmentVariable("BUDDY_MODEL", "env-model");
+    public void Picks_first_provider_model() {
+        var configPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".buddy",
+            "config.json");
 
-            var opts = BuddyOptionsLoader.Load(Directory.GetCurrentDirectory(), Array.Empty<string>());
-            Assert.Equal("env-model", opts.Model);
+        var directory = Path.GetDirectoryName(configPath);
+        if (!string.IsNullOrWhiteSpace(directory)) {
+            Directory.CreateDirectory(directory);
         }
-        finally {
-            Environment.SetEnvironmentVariable("BUDDY_MODEL", original);
-        }
-    }
 
-    [Fact]
-    public void Command_line_overrides_environment() {
-        var original = Environment.GetEnvironmentVariable("BUDDY_MODEL");
-        try {
-            Environment.SetEnvironmentVariable("BUDDY_MODEL", "env-model");
+        var config = new BuddyConfigFile {
+            Providers = new List<LlmProviderConfig> {
+                new() {
+                    Name = "GitHub Models",
+                    BaseUrl = "https://models.github.ai/inference",
+                    ApiKey = "key_here",
+                    Models = new List<LlmModelConfig> {
+                        new() {
+                            Name = "GPT-5-Mini",
+                            System = "openai/gpt-5-mini"
+                        }
+                    }
+                }
+            }
+        };
 
-            var opts = BuddyOptionsLoader.Load(
-                Directory.GetCurrentDirectory(),
-                new[] { "--model", "cli-model" });
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            config,
+            new System.Text.Json.JsonSerializerOptions {
+                WriteIndented = true
+            });
 
-            Assert.Equal("cli-model", opts.Model);
-        }
-        finally {
-            Environment.SetEnvironmentVariable("BUDDY_MODEL", original);
-        }
+        File.WriteAllText(configPath, json);
+
+        var opts = BuddyOptionsLoader.Load(Directory.GetCurrentDirectory(), Array.Empty<string>());
+
+        Assert.Equal("https://models.github.ai/inference", opts.BaseUrl);
+        Assert.Equal("key_here", opts.ApiKey);
+        Assert.Equal("openai/gpt-5-mini", opts.Model);
     }
 }

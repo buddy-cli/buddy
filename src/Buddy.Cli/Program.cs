@@ -6,19 +6,9 @@ using Buddy.Core.Application;
 using Buddy.Core.Configuration;
 using Buddy.Core.Instructions;
 using Buddy.LLM;
-using DotNetEnv;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Spectre.Console;
 
-// Phase 0 scaffold: load .env if present (lowest priority) so users can set API key/model early.
-try {
-    // Keep .env as lowest priority: don't overwrite real environment variables.
-    Env.NoClobber().TraversePath().Load();
-}
-catch (Exception ex) {
-    AnsiConsole.MarkupLine($"[red]warning:[/] failed to load .env ({ex.Message})");
-}
 
 var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
 var workingDirectory = Environment.CurrentDirectory;
