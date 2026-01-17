@@ -5,15 +5,9 @@ namespace Buddy.Core.Tests;
 public sealed class BuddyOptionsLoaderTests {
     [Fact]
     public void Picks_first_provider_model() {
-        var configPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".buddy",
-            "config.json");
-
-        var directory = Path.GetDirectoryName(configPath);
-        if (!string.IsNullOrWhiteSpace(directory)) {
-            Directory.CreateDirectory(directory);
-        }
+        var configDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(configDirectory);
+        var configPath = Path.Combine(configDirectory, "config.json");
 
         var config = new BuddyConfigFile {
             Providers = new List<LlmProviderConfig> {
@@ -39,7 +33,7 @@ public sealed class BuddyOptionsLoaderTests {
 
         File.WriteAllText(configPath, json);
 
-        var opts = BuddyOptionsLoader.Load(Directory.GetCurrentDirectory(), Array.Empty<string>());
+        var opts = BuddyOptionsLoader.Load(Directory.GetCurrentDirectory(), Array.Empty<string>(), configPath);
 
         Assert.Equal("https://models.github.ai/inference", opts.BaseUrl);
         Assert.Equal("key_here", opts.ApiKey);

@@ -3,12 +3,12 @@ using Microsoft.Extensions.Configuration;
 namespace Buddy.Core.Configuration;
 
 public static class BuddyOptionsLoader {
-    public static BuddyOptions Load(string workingDirectory, string[] args) {
+    public static BuddyOptions Load(string workingDirectory, string[] args, string? configPath = null) {
         if (string.IsNullOrWhiteSpace(workingDirectory)) {
             workingDirectory = Directory.GetCurrentDirectory();
         }
 
-        var configPath = ResolveConfigPath();
+        configPath ??= ResolveConfigPath();
         EnsureConfigExists(configPath);
 
         var config = new ConfigurationBuilder()
