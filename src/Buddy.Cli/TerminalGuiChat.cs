@@ -28,7 +28,7 @@ internal static class TerminalGuiChat {
         {
             new() { Command = "help", Description = "Show available commands" },
             new() { Command = "clear", Description = "Clear conversation history" },
-            new() { Command = "model", Description = "Switch or view current model", ParameterHint = "<name>" },
+            new() { Command = "model", Description = "Select model for next turns" },
             new() { Command = "provider", Description = "Edit provider configuration" },
             new() { Command = "exit", Description = "Exit the application" },
             new() { Command = "quit", Description = "Exit the application" }

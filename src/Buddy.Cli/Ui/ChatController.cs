@@ -160,7 +160,7 @@ internal sealed class ChatController {
 
         switch (cmd) {
             case "/help":
-                AppendHistoryOnUi("\nCommands:\n  /help             Show this help\n  /clear            Clear conversation history\n  /model <name>     Switch model for next turns\n  /provider         Edit provider configuration\n  /exit or /quit    Exit\n");
+                AppendHistoryOnUi("\nCommands:\n  /help             Show this help\n  /clear            Clear conversation history\n  /model            Select model for next turns\n  /provider         Edit provider configuration\n  /exit or /quit    Exit\n");
                 return true;
             case "/clear":
                 _agent.ClearHistory();
@@ -170,17 +170,7 @@ internal sealed class ChatController {
                 AppendHistoryOnUi("\n(history cleared)\n");
                 return true;
             case "/model":
-                if (string.IsNullOrWhiteSpace(arg)) {
-                    AppendHistoryOnUi($"\ncurrent model {_options.Model}\n");
-                    return true;
-                }
-
-                _options.Model = arg.Trim();
-                if (_state.CurrentClient is IDisposable disposable) {
-                    disposable.Dispose();
-                }
-                _state.CurrentClient = _llmClientFactory(_options.Model);
-                AppendHistoryOnUi($"\nmodel set to {_options.Model}\n");
+                ShowModelDialog();
                 return true;
             case "/provider":
                 ShowProviderDialog();
@@ -228,4 +218,31 @@ internal sealed class ChatController {
             AppendHistoryOnUi("\n(provider configuration saved)\n");
         }
     }
+
+    private void ShowModelDialog() {
+        if (_options.Providers.Count == 0) {
+            AppendHistoryOnUi("\nno providers configured\n");
+            return;
+        }
+
+        if (!ModelSelectionDialog.TrySelectModel(_options.Providers, out var providerIndex, out var modelIndex)) {
+            return;
+        }
+
+        var provider = _options.Providers[providerIndex];
+        var model = provider.Models[modelIndex];
+        _options.Model = model.System;
+        _options.ApiKey = provider.ApiKey;
+        _options.BaseUrl = provider.BaseUrl;
+
+        if (_state.CurrentClient is IDisposable disposable) {
+            disposable.Dispose();
+        }
+
+        _state.CurrentClient = _llmClientFactory(_options.Model);
+        TerminalGuiLayout.RefreshFooter(_options, _version, _parts);
+        Application.LayoutAndDraw(forceDraw: false);
+        AppendHistoryOnUi($"\nmodel set to {_options.Model}\n");
+    }
 }
+

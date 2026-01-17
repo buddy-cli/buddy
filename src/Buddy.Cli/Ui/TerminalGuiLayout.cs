@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Linq;
 using Buddy.Core.Configuration;
 using Terminal.Gui;
 
@@ -19,9 +20,10 @@ internal static class TerminalGuiLayout {
             return "(none)";
         }
 
-        return string.IsNullOrWhiteSpace(options.Providers[0].Name)
+        var activeProvider = ResolveActiveProvider(options);
+        return string.IsNullOrWhiteSpace(activeProvider.Name)
             ? "(unnamed)"
-            : options.Providers[0].Name;
+            : activeProvider.Name;
     }
 
     public static string GetModelLabel(BuddyOptions options) {
@@ -29,14 +31,35 @@ internal static class TerminalGuiLayout {
             return options.Model;
         }
 
-        var provider = options.Providers[0];
-        if (provider.Models.Count == 0) {
+        var activeProvider = ResolveActiveProvider(options);
+        var activeModel = ResolveActiveModel(options, activeProvider);
+        if (activeModel is null) {
             return options.Model;
         }
 
-        return string.IsNullOrWhiteSpace(provider.Models[0].Name)
-            ? provider.Models[0].System
-            : provider.Models[0].Name;
+        return string.IsNullOrWhiteSpace(activeModel.Name)
+            ? activeModel.System
+            : activeModel.Name;
+    }
+
+    private static LlmProviderConfig ResolveActiveProvider(BuddyOptions options) {
+        if (!string.IsNullOrWhiteSpace(options.BaseUrl)) {
+            var match = options.Providers.FirstOrDefault(provider => provider.BaseUrl == options.BaseUrl);
+            if (match is not null) {
+                return match;
+            }
+        }
+
+        return options.Providers[0];
+    }
+
+    private static LlmModelConfig? ResolveActiveModel(BuddyOptions options, LlmProviderConfig provider) {
+        if (provider.Models.Count == 0) {
+            return null;
+        }
+
+        var match = provider.Models.FirstOrDefault(model => model.System == options.Model);
+        return match ?? provider.Models[0];
     }
 
     public static void RefreshFooter(BuddyOptions options, string version, ChatLayoutParts parts) {
