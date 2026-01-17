@@ -1,11 +1,12 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using Buddy.Cli;
 using Buddy.Core.Agents;
 using Buddy.Core.Application;
 using Buddy.Core.Configuration;
 using Buddy.Core.Instructions;
+using Buddy.Core.Worktree;
+using WorktreeSnapshot = Buddy.Cli.WorktreeSnapshot;
 using Buddy.LLM;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,7 +23,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddBuddyCore(options);
 using var host = builder.Build();
 
-var worktreeSnapshot = BuildWorktreeSnapshot(workingDirectory);
+var worktreeSnapshot = Buddy.Cli.WorktreeSnapshot.Build(workingDirectory);
 
 var systemPrompt = $"""
 [Role]
@@ -36,10 +37,7 @@ OS environment: {osEnvironment}.
 <workingDir>
 Current working directory: {workingDirectory}.
 Project worktree:
-```
 {worktreeSnapshot}
-```
-The worktree might be truncated and show up to 5 files and directories at each level.
 </workingDir>
 """;
 
@@ -65,45 +63,3 @@ var exitCode = await TerminalGuiChat.RunAsync(
 
 Console.CancelKeyPress -= cancelHandler;
 return exitCode;
-
-static string BuildWorktreeSnapshot(string root) {
-    if (string.IsNullOrWhiteSpace(root)) {
-        root = Directory.GetCurrentDirectory();
-    }
-
-    var sb = new StringBuilder();
-    var rootInfo = new DirectoryInfo(root);
-    if (!rootInfo.Exists) {
-        return "(working directory missing)";
-    }
-
-    sb.AppendLine(".");
-    AppendChildren(sb, rootInfo, indentLevel: 1);
-    return sb.ToString().TrimEnd();
-}
-
-static void AppendChildren(StringBuilder sb, DirectoryInfo directory, int indentLevel) {
-    var entries = directory.EnumerateFileSystemInfos()
-        .Where(entry => !string.Equals(entry.Name, ".git", StringComparison.OrdinalIgnoreCase))
-        .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
-        .ToList();
-
-    var displayed = 0;
-    foreach (var entry in entries) {
-        if (displayed >= 5) {
-            sb.AppendLine($"{Indent(indentLevel)}...");
-            break;
-        }
-
-        if (entry is DirectoryInfo dir) {
-            sb.AppendLine($"{Indent(indentLevel)}{dir.Name}/");
-        }
-        else {
-            sb.AppendLine($"{Indent(indentLevel)}{entry.Name}");
-        }
-
-        displayed++;
-    }
-}
-
-static string Indent(int level) => new string(' ', level * 2);
