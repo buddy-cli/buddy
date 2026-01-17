@@ -19,6 +19,8 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<ITool, WriteFileTool>();
         services.AddSingleton<ITool, EditFileTool>();
         services.AddSingleton<ITool, ListDirectoryTool>();
+        services.AddSingleton<ITool, GlobTool>();
+        services.AddSingleton<ITool, GrepTool>();
         services.AddSingleton<ITool, RunTerminalTool>();
         services.AddSingleton<ToolRegistry>();
 

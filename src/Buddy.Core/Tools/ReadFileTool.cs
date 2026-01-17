@@ -24,7 +24,7 @@ public sealed class ReadFileTool : ITool {
     }
 
     public string Name => "read_file";
-    public string Description => "Read a file and return its contents.";
+    public string Description => "Read the full contents of a file. Use after locating the file with 'glob' or 'list_directory'. Returns the complete file text.";
     public JsonElement ParameterSchema => Schema;
 
     public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {

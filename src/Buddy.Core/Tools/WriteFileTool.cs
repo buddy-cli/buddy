@@ -25,7 +25,7 @@ public sealed class WriteFileTool : ITool {
     }
 
     public string Name => "write_file";
-    public string Description => "Write a file (creating parent directories if needed).";
+    public string Description => "Create a new file or overwrite an existing file with the given content. Parent directories are created automatically. Use 'edit_file' for partial modifications to existing files.";
     public JsonElement ParameterSchema => Schema;
 
     public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {

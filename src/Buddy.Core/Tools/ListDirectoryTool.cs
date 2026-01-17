@@ -25,7 +25,7 @@ public sealed class ListDirectoryTool : ITool {
     }
 
     public string Name => "list_directory";
-    public string Description => "List entries in a directory.";
+    public string Description => "List files and subdirectories in a specific directory. Use when you already know the directory path, or to explore project structure. For finding files by name, prefer 'glob' instead.";
     public JsonElement ParameterSchema => Schema;
 
     public Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {

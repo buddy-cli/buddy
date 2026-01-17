@@ -25,7 +25,7 @@ public sealed class RunTerminalTool : ITool {
     }
 
     public string Name => "run_terminal";
-    public string Description => "Run a shell command in the working directory and return stdout/stderr + exit code.";
+    public string Description => "Execute a shell command (zsh) and return output. Use for: building projects (dotnet build), running tests, git operations, or checking file states. Returns exit code, stdout, and stderr.";
     public JsonElement ParameterSchema => Schema;
 
     public async Task<string> ExecuteAsync(JsonElement args, CancellationToken cancellationToken = default) {

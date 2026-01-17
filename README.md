@@ -22,6 +22,8 @@ It is **not** a production-ready agent and makes trade-offs for simplicity and h
   - `write_file`
   - `edit_file` (exact search/replace)
   - `list_directory`
+  - `glob`
+  - `grep`
   - `run_terminal`
 - Slash commands (handled locally, not sent to the LLM):
   - `/help`, `/clear`, `/model <name>`, `/exit`, `/quit`
