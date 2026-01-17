@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Buddy.Cli.Logging;
 using Buddy.Cli.Ui;
 using Buddy.Core.Agents;
 using Buddy.LLM;
@@ -16,7 +17,9 @@ internal static class TerminalGuiChat {
         string systemPrompt,
         string? projectInstructions,
         CancellationToken cancellationToken) {
-        var state = new ChatSessionState(llmClient, inputHeight: 3, currentStage: "Idle");
+        var sessionLogger = MarkdownSessionLogger.Create(version, options.Model);
+        var loggingClient = new LoggingLlmClient(llmClient, sessionLogger, () => options.Model);
+        var state = new ChatSessionState(loggingClient, inputHeight: 3, currentStage: "Idle");
         var metrics = new ChatLayoutMetrics(
             SessionHeaderHeight: 2,
             StageHeight: 1,
