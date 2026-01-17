@@ -20,39 +20,35 @@ public sealed class BuddyAgent(ToolRegistry toolRegistry) {
         _history.Add(new Message(MessageRole.User, userInput));
 
         var tools = toolRegistry.GetToolDefinitions();
+        var toolNames = tools.Select(t => t.Name).ToList();
 
         // Loop: LLM -> tool calls -> tool results -> LLM
         for (var round = 0; round < 50; round++) {
             var messages = BuildMessageList(systemPrompt, projectInstructions);
-
-            var assistantText = new StringBuilder();
-            var toolAccumulators = new Dictionary<int, ToolCallAccumulator>();
+            var collector = new StreamingToolCallCollector(toolNames);
 
             await foreach (var chunk in llmClient.GetStreamingResponseAsync(messages, tools, cancellationToken)) {
-                if (chunk.TextDelta is { Length: > 0 } text) {
-                    assistantText.Append(text);
-                    await onTextDelta(text);
+                if (chunk.ToolCall is not null) {
+                    collector.ProcessToolCallDelta(chunk.ToolCall);
                 }
 
-                if (chunk.ToolCall is not null) {
-                    var delta = chunk.ToolCall;
-                    if (!toolAccumulators.TryGetValue(delta.Index, out var acc)) {
-                        acc = new ToolCallAccumulator(delta.Index);
-                        toolAccumulators[delta.Index] = acc;
+                if (chunk.TextDelta is { Length: > 0 } text) {
+                    var displayText = collector.ProcessTextDelta(text);
+                    if (displayText is { Length: > 0 }) {
+                        await onTextDelta(displayText);
                     }
-
-                    acc.Apply(delta);
                 }
             }
 
-            var toolCalls = toolAccumulators.Values
-                .OrderBy(a => a.Index)
-                .Select(a => a.ToToolCall())
-                .ToArray();
+            var (toolCalls, remainingText) = collector.Finalize();
+
+            if (remainingText is { Length: > 0 }) {
+                await onTextDelta(remainingText);
+            }
 
             if (toolCalls.Length == 0) {
-                if (assistantText.Length > 0) {
-                    _history.Add(new Message(MessageRole.Assistant, assistantText.ToString()));
+                if (collector.DisplayText.Length > 0) {
+                    _history.Add(new Message(MessageRole.Assistant, collector.DisplayText));
                 }
 
                 return;
@@ -61,7 +57,7 @@ public sealed class BuddyAgent(ToolRegistry toolRegistry) {
             // Add assistant message that requested tools.
             _history.Add(new Message(
                 MessageRole.Assistant,
-                assistantText.Length == 0 ? null : assistantText.ToString(),
+                collector.DisplayText.Length == 0 ? null : collector.DisplayText,
                 ToolCallId: null,
                 ToolCalls: toolCalls));
 
