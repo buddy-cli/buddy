@@ -4,14 +4,8 @@ using Buddy.LLM;
 
 namespace Buddy.Core.Agents;
 
-public sealed class BuddyAgent {
-    private readonly ToolRegistry _toolRegistry;
-
+public sealed class BuddyAgent(ToolRegistry toolRegistry) {
     private readonly List<Message> _history = new();
-
-    public BuddyAgent(ToolRegistry toolRegistry) {
-        _toolRegistry = toolRegistry;
-    }
 
     public void ClearHistory() => _history.Clear();
 
@@ -25,7 +19,7 @@ public sealed class BuddyAgent {
         CancellationToken cancellationToken) {
         _history.Add(new Message(MessageRole.User, userInput));
 
-        var tools = _toolRegistry.GetToolDefinitions();
+        var tools = toolRegistry.GetToolDefinitions();
 
         // Loop: LLM -> tool calls -> tool results -> LLM
         for (var round = 0; round < 50; round++) {
@@ -73,10 +67,10 @@ public sealed class BuddyAgent {
 
             // Execute tools sequentially and append tool messages.
             foreach (var tc in toolCalls) {
-                var statusLine = _toolRegistry.FormatStatusLine(tc.Name, tc.ArgumentsJson);
+                var statusLine = toolRegistry.FormatStatusLine(tc.Name, tc.ArgumentsJson);
                 await onToolStatus($"→ {statusLine}");
 
-                var result = await _toolRegistry.ExecuteAsync(tc.Name, tc.ArgumentsJson, cancellationToken);
+                var result = await toolRegistry.ExecuteAsync(tc.Name, tc.ArgumentsJson, cancellationToken);
                 _history.Add(new Message(MessageRole.Tool, result, ToolCallId: tc.Id));
             }
         }
