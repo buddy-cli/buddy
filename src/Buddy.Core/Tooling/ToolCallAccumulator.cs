@@ -3,13 +3,11 @@ using Buddy.LLM;
 
 namespace Buddy.Core.Tooling;
 
-internal sealed class ToolCallAccumulator {
-    public int Index { get; }
+internal sealed class ToolCallAccumulator(int index) {
+    public int Index { get; } = index;
     private string _id = string.Empty;
     private string _name = string.Empty;
     private readonly StringBuilder _args = new();
-
-    public ToolCallAccumulator(int index) => Index = index;
 
     public void Apply(ToolCallDelta delta) {
         if (!string.IsNullOrWhiteSpace(delta.Id)) _id = delta.Id;

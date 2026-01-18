@@ -210,14 +210,11 @@ internal sealed class ChatController {
 
         _state.CurrentMClient = _llmClientFactory.Create(_context.Options.Model);
 
-        var saved = true;
-
         try {
             var configPath = BuddyOptionsLoader.ResolveConfigPath();
             BuddyOptionsLoader.Save(configPath, new BuddyConfigFile { Providers = updatedProviders });
         }
         catch (Exception ex) {
-            saved = false;
             AppendHistoryOnUi($"\nfailed to save provider config: {ex.Message}\n");
         }
 

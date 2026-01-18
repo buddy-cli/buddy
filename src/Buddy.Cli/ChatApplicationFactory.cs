@@ -1,28 +1,36 @@
-using Buddy.Cli.Logging;
-using Buddy.Cli.Ui;
-using Buddy.Core.Agents;
+using Buddy.Cli.AgentRuntime;
 using Buddy.Core.Application;
 using Buddy.Core.Configuration;
-using Buddy.LLM;
+using Buddy.Core.Instructions;
+using Buddy.Core.Worktree;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Buddy.Cli;
 
-internal sealed class ChatApplicationFactory {
-    private readonly IServiceProvider _services;
-
-    public ChatApplicationFactory(IServiceProvider services) {
-        _services = services;
-    }
-
-    public ChatApplication Create(
-        string version,
-        string systemPrompt,
-        string? projectInstructions,
+internal sealed class ChatApplicationFactory(IServiceProvider services) {
+    public async Task<ChatApplication> Create(
+        AgentEnvironment environment,
+        BuddyOptions options,
         CancellationToken cancellationToken) {
+
+        var worktreeSnapshotProvider = services.GetRequiredService<IWorktreeSnapshotProvider>();
+        var worktreeSnapshot = worktreeSnapshotProvider.Build(environment.WorkingDirectory);
+
+        var projectInstructions = await ProjectInstructionsLoader.Load(environment.WorkingDirectory);
+
+        var systemPromptBuilder = services.GetRequiredService<ISystemPromptBuilder>();
+        var systemPrompt = systemPromptBuilder.Build(options, environment.CurrentDate, environment.OsEnvironment)
+                           + $"""
+                              <ProjectWorktree>
+                              Project worktree:
+                              {worktreeSnapshot}
+                              </ProjectWorktree>
+                              """;
+
+
         return ActivatorUtilities.CreateInstance<ChatApplication>(
-            _services,
-            version,
+            services,
+            environment.Version,
             systemPrompt,
             projectInstructions ?? string.Empty,
             cancellationToken);

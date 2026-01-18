@@ -1,10 +1,9 @@
 using Buddy.Cli.Logging;
 using Buddy.Cli.Ui;
-using Buddy.Core.Configuration;
 using Buddy.LLM;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Buddy.Cli.Extensions;
+namespace Buddy.Cli.DependencyInjection;
 
 public static class ServiceCollectionExtensions {
     public static IServiceCollection AddBuddyCli(this IServiceCollection services) {

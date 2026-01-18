@@ -7,6 +7,7 @@ namespace Buddy.Cli.Ui;
 
 internal static class TerminalGuiLayout {
     public static string BannerText { get; } = string.Join("\n", new[] {
+        "                                          ",
         "██████╗ ██╗   ██╗██████╗ ██████╗ ██╗   ██╗",
         "██╔══██╗██║   ██║██╔══██╗██╔══██╗╚██╗ ██╔╝",
         "██████╔╝██║   ██║██║  ██║██║  ██║ ╚████╔╝ ",

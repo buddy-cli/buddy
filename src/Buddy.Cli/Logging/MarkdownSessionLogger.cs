@@ -23,7 +23,7 @@ internal sealed class MarkdownSessionLogger {
     public static MarkdownSessionLogger Create(string version, string modelName) {
         var startedAt = DateTimeOffset.Now;
         var sessionDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
             ".buddy",
             "sessions");
         Directory.CreateDirectory(sessionDir);
