@@ -4,7 +4,7 @@ using Buddy.Core.Tooling;
 
 namespace Buddy.Core.Tools;
 
-public sealed class WriteFileTool : ITool {
+public sealed class WriteFileTool(BuddyOptions options) : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -18,11 +18,7 @@ public sealed class WriteFileTool : ITool {
         }
         """).RootElement.Clone();
 
-    private readonly string _workingDirectory;
-
-    public WriteFileTool(BuddyOptions options) {
-        _workingDirectory = options.WorkingDirectory;
-    }
+    private readonly string _workingDirectory = options.WorkingDirectory;
 
     public string Name => "write_file";
     public string Description => "Create a new file or overwrite an existing file with the given content. Parent directories are created automatically. Use 'edit_file' for partial modifications to existing files.";

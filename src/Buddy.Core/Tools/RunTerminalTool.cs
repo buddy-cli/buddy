@@ -5,7 +5,7 @@ using Buddy.Core.Configuration;
 
 namespace Buddy.Core.Tools;
 
-public sealed class RunTerminalTool : ITool {
+public sealed class RunTerminalTool(BuddyOptions options) : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -18,11 +18,7 @@ public sealed class RunTerminalTool : ITool {
         }
         """).RootElement.Clone();
 
-    private readonly string _workingDirectory;
-
-    public RunTerminalTool(BuddyOptions options) {
-        _workingDirectory = options.WorkingDirectory;
-    }
+    private readonly string _workingDirectory = options.WorkingDirectory;
 
     public string Name => "run_terminal";
     public string Description => "Execute a shell command (zsh) and return output. Use for: building projects (dotnet build), running tests, git operations, or checking file states. Returns exit code, stdout, and stderr.";

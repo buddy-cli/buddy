@@ -4,7 +4,7 @@ using Buddy.Core.Tooling;
 
 namespace Buddy.Core.Tools;
 
-public sealed class EditFileTool : ITool {
+public sealed class EditFileTool(BuddyOptions options) : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -19,11 +19,7 @@ public sealed class EditFileTool : ITool {
         }
         """).RootElement.Clone();
 
-    private readonly string _workingDirectory;
-
-    public EditFileTool(BuddyOptions options) {
-        _workingDirectory = options.WorkingDirectory;
-    }
+    private readonly string _workingDirectory = options.WorkingDirectory;
 
     public string Name => "edit_file";
     public string Description => "Edit a file by replacing exact text. The 'search' must match exactly (including whitespace). Include surrounding context lines in 'search' to ensure uniqueness. All occurrences are replaced. Read the file first to get the exact text. ESCAPE NOTE: JSON escaping applies - to get a literal backslash in the file, send '\\\\' (two backslashes) in the JSON value. For C# format strings like 'hh\\\\:mm' (double backslash in file), send 4 backslashes in JSON.";

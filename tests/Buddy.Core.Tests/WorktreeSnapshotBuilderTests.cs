@@ -2,7 +2,7 @@ using Buddy.Core.Worktree;
 
 namespace Buddy.Core.Tests;
 
-public sealed class WorktreeSnapshotTests {
+public sealed class WorktreeSnapshotBuilderTests {
     [Fact]
     public void Includes_shallow_tree_with_limits() {
         var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());

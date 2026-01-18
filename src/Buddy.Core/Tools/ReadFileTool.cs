@@ -4,7 +4,7 @@ using Buddy.Core.Tooling;
 
 namespace Buddy.Core.Tools;
 
-public sealed class ReadFileTool : ITool {
+public sealed class ReadFileTool(BuddyOptions options) : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -17,11 +17,7 @@ public sealed class ReadFileTool : ITool {
         }
         """).RootElement.Clone();
 
-    private readonly string _workingDirectory;
-
-    public ReadFileTool(BuddyOptions options) {
-        _workingDirectory = options.WorkingDirectory;
-    }
+    private readonly string _workingDirectory = options.WorkingDirectory;
 
     public string Name => "read_file";
     public string Description => "Read the full contents of a file. Use after locating the file with 'glob' or 'list_directory'. Returns the complete file text.";

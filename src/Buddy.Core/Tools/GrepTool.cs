@@ -5,7 +5,7 @@ using Buddy.Core.Tooling;
 
 namespace Buddy.Core.Tools;
 
-public sealed class GrepTool : ITool {
+public sealed class GrepTool(BuddyOptions options) : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -20,11 +20,7 @@ public sealed class GrepTool : ITool {
         }
         """).RootElement.Clone();
 
-    private readonly string _workingDirectory;
-
-    public GrepTool(BuddyOptions options) {
-        _workingDirectory = options.WorkingDirectory;
-    }
+    private readonly string _workingDirectory = options.WorkingDirectory;
 
     public string Name => "grep";
     public string Description => "Search inside file contents using regex. Use when looking for code patterns, function definitions, or specific text. Returns matching lines with file:line format. Use 'include' to filter by file type (e.g., '*.cs' or '**/*.ts').";

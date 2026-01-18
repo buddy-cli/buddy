@@ -6,7 +6,7 @@ using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 
 namespace Buddy.Core.Tools;
 
-public sealed class GlobTool : ITool {
+public sealed class GlobTool(BuddyOptions options) : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -20,11 +20,7 @@ public sealed class GlobTool : ITool {
         }
         """).RootElement.Clone();
 
-    private readonly string _workingDirectory;
-
-    public GlobTool(BuddyOptions options) {
-        _workingDirectory = options.WorkingDirectory;
-    }
+    private readonly string _workingDirectory = options.WorkingDirectory;
 
     public string Name => "glob";
     public string Description => "Find files by name pattern. ALWAYS use a specific pattern - NEVER use '**/*'. Examples: '**/myproject/**' finds all files in myproject folder, '**/README.md' finds README.md anywhere, '**/*.json' finds all JSON files. Note: '**/foo*' matches file NAMES starting with 'foo', not folder contents - use '**/foo/**' for folder contents.";

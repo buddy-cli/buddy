@@ -5,7 +5,7 @@ using Buddy.Core.Tooling;
 
 namespace Buddy.Core.Tools;
 
-public sealed class ListDirectoryTool : ITool {
+public sealed class ListDirectoryTool(BuddyOptions options) : ITool {
     private static readonly JsonElement Schema = JsonDocument.Parse(
         """
         {
@@ -18,11 +18,7 @@ public sealed class ListDirectoryTool : ITool {
         }
         """).RootElement.Clone();
 
-    private readonly string _workingDirectory;
-
-    public ListDirectoryTool(BuddyOptions options) {
-        _workingDirectory = options.WorkingDirectory;
-    }
+    private readonly string _workingDirectory = options.WorkingDirectory;
 
     public string Name => "list_directory";
     public string Description => "List files and subdirectories in a specific directory. Use when you already know the directory path, or to explore project structure. For finding files by name, prefer 'glob' instead.";
