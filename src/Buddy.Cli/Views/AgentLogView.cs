@@ -11,7 +11,11 @@ using Terminal.Gui.Views;
 namespace Buddy.Cli.Views;
 
 public class AgentLogView : FrameView, IViewFor<AgentLogViewModel> {
+    private const int StageRowHeight = 1;
+    
     private readonly CompositeDisposable _disposable = [];
+    private readonly SpinnerView _spinner;
+    private readonly Label _stageLabel;
     private readonly TextView _logTextView;
 
     object? IViewFor.ViewModel {
@@ -26,16 +30,53 @@ public class AgentLogView : FrameView, IViewFor<AgentLogViewModel> {
         Title = "Agent Log";
         Visible = false;
 
-        _logTextView = new TextView {
+        // Spinner positioned at the top left
+        _spinner = new SpinnerView {
             X = 0,
             Y = 0,
+            Width = 2,
+            Height = 1,
+            AutoSpin = false,
+            Visible = false
+        };
+
+        // Stage label next to spinner
+        _stageLabel = new Label {
+            X = Pos.Right(_spinner) + 1,
+            Y = 0,
+            Text = "Stage: Idle"
+        };
+
+        // Log text view below the stage row
+        _logTextView = new TextView {
+            X = 0,
+            Y = StageRowHeight,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             ReadOnly = true,
             WordWrap = true
         };
 
-        Add(_logTextView);
+        Add(_spinner, _stageLabel, _logTextView);
+
+        // Bind spinner visibility and auto-spin to IsProcessing
+        viewModel
+            .WhenAnyValue(x => x.IsProcessing)
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(isProcessing => {
+                _spinner.Visible = isProcessing;
+                _spinner.AutoSpin = isProcessing;
+            })
+            .DisposeWith(_disposable);
+
+        // Bind stage label text
+        viewModel
+            .WhenAnyValue(x => x.CurrentStage)
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(stage => {
+                _stageLabel.Text = $"Stage: {stage}";
+            })
+            .DisposeWith(_disposable);
 
         // Subscribe to collection changes
         Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(

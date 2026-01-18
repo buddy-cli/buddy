@@ -100,6 +100,7 @@ public partial class MainViewModel : ReactiveObject {
             // Cancelled by user
         } finally {
             AgentLog.IsProcessing = false;
+            AgentLog.SetIdle();
             _cts.Dispose();
             _cts = null;
         }
