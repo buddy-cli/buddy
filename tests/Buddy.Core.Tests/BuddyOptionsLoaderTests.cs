@@ -1,4 +1,5 @@
 using Buddy.Core.Configuration;
+using System.Text.Json;
 
 namespace Buddy.Core.Tests;
 
@@ -11,30 +12,30 @@ public sealed class BuddyOptionsLoaderTests {
 
         try {
             var config = new BuddyConfigFile {
-                Providers = new List<LlmProviderConfig> {
-                    new() {
+                Providers = [
+                    new LlmProviderConfig {
                         Name = "GitHub Models",
                         BaseUrl = "https://models.github.ai/inference",
                         ApiKey = "key_here",
-                        Models = new List<LlmModelConfig> {
-                            new() {
+                        Models = [
+                            new LlmModelConfig {
                                 Name = "GPT-5-Mini",
                                 System = "openai/gpt-5-mini"
                             }
-                        }
+                        ]
                     }
-                }
+                ]
             };
 
-            var json = System.Text.Json.JsonSerializer.Serialize(
+            var json = JsonSerializer.Serialize(
                 config,
-                new System.Text.Json.JsonSerializerOptions {
+                new JsonSerializerOptions {
                     WriteIndented = true
                 });
 
             File.WriteAllText(configPath, json);
 
-            var opts = BuddyOptionsLoader.Load(Directory.GetCurrentDirectory(), Array.Empty<string>(), configPath);
+            var opts = BuddyOptionsLoader.Load(Directory.GetCurrentDirectory(), [], configPath);
 
             Assert.Equal("https://models.github.ai/inference", opts.BaseUrl);
             Assert.Equal("key_here", opts.ApiKey);

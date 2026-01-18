@@ -10,7 +10,7 @@ public sealed class BuddyAgent(ToolRegistry toolRegistry) {
     public void ClearHistory() => _history.Clear();
 
     public async Task RunTurnAsync(
-        ILLMClient llmClient,
+        ILlmMClient llmMClient,
         string systemPrompt,
         string? projectInstructions,
         string userInput,
@@ -27,7 +27,7 @@ public sealed class BuddyAgent(ToolRegistry toolRegistry) {
             var messages = BuildMessageList(systemPrompt, projectInstructions);
             var collector = new StreamingToolCallCollector(toolNames);
 
-            await foreach (var chunk in llmClient.GetStreamingResponseAsync(messages, tools, cancellationToken)) {
+            await foreach (var chunk in llmMClient.GetStreamingResponseAsync(messages, tools, cancellationToken)) {
                 if (chunk.ToolCall is not null) {
                     collector.ProcessToolCallDelta(chunk.ToolCall);
                 }

@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Buddy.LLM;
+using Buddy.LLM.Api;
 
 namespace Buddy.LLM.Tests;
 
@@ -16,12 +17,12 @@ public sealed class OpenAiLlmClientStreamingTests {
         });
 
         using var http = new HttpClient(new FakeSseHandler(sse));
-        var client = new OpenAiLlmClient(http, apiKey: "test", model: "test-model", baseUrl: "https://example.com/v1");
+        var client = new OpenAiLlmMClient(http, apiKey: "test", model: "test-model", baseUrl: "https://example.com/v1");
 
         var chunks = new List<ChatResponseChunk>();
         await foreach (var chunk in client.GetStreamingResponseAsync(
-                           new[] { new Message(MessageRole.User, "hello") },
-                           Array.Empty<ToolDefinition>())) {
+                           [new Message(MessageRole.User, "hello")],
+                           [])) {
             chunks.Add(chunk);
         }
 
@@ -89,7 +90,7 @@ public sealed class OpenAiLlmClientStreamingTests {
         });
 
         using var http = new HttpClient(new FakeSseHandler(sse));
-        var client = new OpenAiLlmClient(http, apiKey: "test", model: "test-model", baseUrl: "https://example.com/v1");
+        var client = new OpenAiLlmMClient(http, apiKey: "test", model: "test-model", baseUrl: "https://example.com/v1");
 
         var toolDeltas = new List<ToolCallDelta>();
         await foreach (var chunk in client.GetStreamingResponseAsync(

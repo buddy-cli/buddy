@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton(options);
         services.AddSingleton<IOptions<BuddyOptions>>(_ => Options.Create(options));
 
-        services.AddSingleton<ILLMClient>(_ => new OpenAiLlmClient(options.ApiKey, options.Model, options.BaseUrl));
+        services.AddSingleton<ILlmMClient>(_ => new OpenAiLlmMClient(options.ApiKey, options.Model, options.BaseUrl));
         services.AddSingleton<ILLMClientFactory, OpenAiLlmClientFactory>();
 
         services.AddSingleton<ISystemPromptBuilder, SystemPromptBuilder>();

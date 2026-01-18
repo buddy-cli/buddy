@@ -59,7 +59,7 @@ internal sealed class ChatController {
 
         try {
             await _agent.RunTurnAsync(
-                _state.CurrentClient,
+                _state.CurrentMClient,
                 _context.SystemPrompt,
                 _context.ProjectInstructions,
                 text,
@@ -184,11 +184,11 @@ internal sealed class ChatController {
         _context.Options.BaseUrl = provider.BaseUrl;
         _context.Options.ApiKey = provider.ApiKey;
 
-        if (_state.CurrentClient is IDisposable disposable) {
+        if (_state.CurrentMClient is IDisposable disposable) {
             disposable.Dispose();
         }
 
-        _state.CurrentClient = _llmClientFactory.Create(_context.Options.Model);
+        _state.CurrentMClient = _llmClientFactory.Create(_context.Options.Model);
 
         TerminalGuiLayout.RefreshFooter(_context.Options, _context.Version, _context.LayoutParts);
         Application.LayoutAndDraw(forceDraw: false);
@@ -204,11 +204,11 @@ internal sealed class ChatController {
         _context.Options.Providers = updatedProviders;
         BuddyOptionsLoader.ApplyPrimaryProviderDefaults(_context.Options);
 
-        if (_state.CurrentClient is IDisposable disposable) {
+        if (_state.CurrentMClient is IDisposable disposable) {
             disposable.Dispose();
         }
 
-        _state.CurrentClient = _llmClientFactory.Create(_context.Options.Model);
+        _state.CurrentMClient = _llmClientFactory.Create(_context.Options.Model);
 
         var saved = true;
 

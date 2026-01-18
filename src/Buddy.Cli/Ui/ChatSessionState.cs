@@ -4,9 +4,9 @@ using Buddy.LLM;
 namespace Buddy.Cli.Ui;
 
 internal sealed class ChatSessionState {
-    public ChatSessionState(ILLMClient currentClient, int inputHeight, string currentStage) {
+    public ChatSessionState(ILlmMClient currentMClient, int inputHeight, string currentStage) {
         HistoryBuffer = new StringBuilder();
-        CurrentClient = currentClient;
+        CurrentMClient = currentMClient;
         InputHeight = inputHeight;
         CurrentStage = currentStage;
     }
@@ -17,7 +17,7 @@ internal sealed class ChatSessionState {
 
     public CancellationTokenSource? TurnCts { get; set; }
 
-    public ILLMClient CurrentClient { get; set; }
+    public ILlmMClient CurrentMClient { get; set; }
 
     public bool SessionStarted { get; set; }
 

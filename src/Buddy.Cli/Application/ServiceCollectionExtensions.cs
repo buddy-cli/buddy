@@ -28,7 +28,7 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<ChatLayoutManager>();
 
         services.AddTransient<ChatSessionState>(sp => new ChatSessionState(
-            sp.GetRequiredService<ILLMClient>(),
+            sp.GetRequiredService<ILlmMClient>(),
             inputHeight: 3,
             currentStage: "Idle"));
 

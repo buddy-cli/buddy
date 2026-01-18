@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Buddy.LLM;
+namespace Buddy.LLM.Api;
 
 internal sealed class ApiToolFunction {
     [JsonPropertyName("name")]

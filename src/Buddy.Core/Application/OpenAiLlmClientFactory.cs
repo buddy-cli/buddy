@@ -10,5 +10,5 @@ public sealed class OpenAiLlmClientFactory : ILLMClientFactory {
         _options = options;
     }
 
-    public ILLMClient Create(string model) => new OpenAiLlmClient(_options.ApiKey, model, _options.BaseUrl);
+    public ILlmMClient Create(string model) => new OpenAiLlmMClient(_options.ApiKey, model, _options.BaseUrl);
 }

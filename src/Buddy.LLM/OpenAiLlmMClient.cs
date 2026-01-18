@@ -10,7 +10,7 @@ namespace Buddy.LLM;
 ///
 /// This intentionally uses raw HTTP for broad compatibility with OpenAI-style gateways.
 /// </summary>
-public sealed class OpenAiLlmClient : ILlmClient, IDisposable {
+public sealed class OpenAiLlmMClient : ILlmMClient, IDisposable {
     private static readonly JsonSerializerOptions JsonOptions = new() {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
@@ -21,15 +21,15 @@ public sealed class OpenAiLlmClient : ILlmClient, IDisposable {
     private readonly HttpClient _httpClient;
     private readonly bool _disposeHttpClient;
 
-    public OpenAiLlmClient(string apiKey, string model, string? baseUrl)
+    public OpenAiLlmMClient(string apiKey, string model, string? baseUrl)
         : this(new HttpClient(), apiKey, model, baseUrl, disposeHttpClient: true) {
     }
 
-    public OpenAiLlmClient(HttpClient httpClient, string apiKey, string model, string? baseUrl)
+    public OpenAiLlmMClient(HttpClient httpClient, string apiKey, string model, string? baseUrl)
         : this(httpClient, apiKey, model, baseUrl, disposeHttpClient: false) {
     }
 
-    private OpenAiLlmClient(HttpClient httpClient, string apiKey, string model, string? baseUrl, bool disposeHttpClient) {
+    private OpenAiLlmMClient(HttpClient httpClient, string apiKey, string model, string? baseUrl, bool disposeHttpClient) {
         _apiKey = apiKey;
         _model = model;
         _baseUri = NormalizeBaseUri(baseUrl);

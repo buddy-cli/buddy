@@ -11,7 +11,7 @@ namespace Buddy.Cli;
 
 internal sealed class ChatApplication {
     private readonly BuddyAgent _agent;
-    private readonly ILLMClient _llmClient;
+    private readonly ILlmMClient llmMClient;
     private readonly ILLMClientFactory _llmClientFactory;
     private readonly BuddyOptions _options;
     private readonly string _version;
@@ -30,7 +30,7 @@ internal sealed class ChatApplication {
         string? projectInstructions,
         CancellationToken cancellationToken,
         BuddyAgent agent,
-        ILLMClient llmClient,
+        ILlmMClient llmMClient,
         ILLMClientFactory llmClientFactory,
         BuddyOptions options,
         ChatLayoutMetrics metrics,
@@ -39,7 +39,7 @@ internal sealed class ChatApplication {
         ChatLayoutManager layoutManager,
         ChatSessionState state) {
         _agent = agent;
-        _llmClient = llmClient;
+        this.llmMClient = llmMClient;
         _llmClientFactory = llmClientFactory;
         _options = options;
         _version = version;
@@ -55,8 +55,8 @@ internal sealed class ChatApplication {
 
     public Task<int> RunAsync() {
         var logger = _sessionLogger.Create(_version, _options.Model);
-        var loggingClient = new LoggingLlmClient(_llmClient, logger, () => _options.Model);
-        _state.CurrentClient = loggingClient;
+        var loggingClient = new LoggingLlmMClient(llmMClient, logger, () => _options.Model);
+        _state.CurrentMClient = loggingClient;
 
         Application.Init();
         var suggestionItems = new ObservableCollection<string>();
