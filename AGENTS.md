@@ -1,7 +1,13 @@
 # Terminal.Gui
-We use the Terminal.Gui TUI library for terminal user interfaces.
+We use the Terminal.Gui v2 TUI library for terminal user interfaces.
 
-Documentation
+# MVVM Pattern
+
+We follow the MVVM (Model-View-ViewModel) pattern for structuring TUI code.
+
+We use ReactiveUI for ViewModel implementations, enabling reactive data binding and event handling.
+
+# Documentation
 
 - Terminal.Gui docs: https://gui-cs.github.io/Terminal.Gui/docs/index.html
 

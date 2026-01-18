@@ -1,12 +1,21 @@
+using Buddy.Cli.AgentRuntime;
 using Buddy.Cli.Logging;
+using Buddy.Cli.Services;
 using Buddy.Cli.Ui;
-using Buddy.LLM;
+using Buddy.Cli.ViewModels;
+using Buddy.Cli.Views;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Buddy.Cli.DependencyInjection;
 
 public static class ServiceCollectionExtensions {
     public static IServiceCollection AddBuddyCli(this IServiceCollection services) {
+        services.AddSingleton<EnvironmentLoader>();
+        services.AddTransient<MainView>();
+        services.AddTransient<MainViewModel>();
+        
+        services.AddSingleton<IAgentService, AgentService>();
+        
         services.AddSingleton<ISessionLogger, MarkdownSessionLoggerFactory>();
 
         services.AddSingleton<ChatLayoutMetrics>(_ => new ChatLayoutMetrics(
@@ -24,14 +33,6 @@ public static class ServiceCollectionExtensions {
             new() { Command = "quit", Description = "Exit the application" }
         });
 
-        services.AddSingleton<ChatLayoutManager>();
-
-        services.AddTransient<ChatSessionState>(sp => new ChatSessionState(
-            sp.GetRequiredService<ILlmMClient>(),
-            inputHeight: 3,
-            currentStage: "Idle"));
-
-        services.AddTransient<ChatController>();
         services.AddTransient<ChatApplication>();
 
         return services;

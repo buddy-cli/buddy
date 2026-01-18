@@ -9,9 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Spectre.Console" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Terminal.Gui" />
+    <PackageReference Include="ReactiveUI" />
+    <PackageReference Include="ReactiveUI.SourceGenerators" />
+    <PackageReference Include="ReactiveMarbles.ObservableEvents.SourceGenerator" />
+    <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
   <ItemGroup>
