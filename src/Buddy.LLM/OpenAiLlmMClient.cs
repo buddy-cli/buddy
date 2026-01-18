@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Buddy.LLM.Api;
 
 namespace Buddy.LLM;
 
@@ -9,7 +10,7 @@ namespace Buddy.LLM;
 ///
 /// This intentionally uses raw HTTP for broad compatibility with OpenAI-style gateways.
 /// </summary>
-public sealed class OpenAiLlmClient : ILLMClient, IDisposable {
+public sealed class OpenAiLlmClient : ILlmClient, IDisposable {
     private static readonly JsonSerializerOptions JsonOptions = new() {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };

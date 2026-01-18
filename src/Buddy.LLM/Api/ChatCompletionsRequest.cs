@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Buddy.LLM;
+namespace Buddy.LLM.Api;
 
 // Minimal DTOs for request serialization.
 internal sealed class ChatCompletionsRequest {

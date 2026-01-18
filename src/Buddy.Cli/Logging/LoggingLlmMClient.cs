@@ -1,14 +1,15 @@
 using System.Text;
 using Buddy.LLM;
+using Buddy.LLM.Api;
 
 namespace Buddy.Cli.Logging;
 
-internal sealed class LoggingLlmClient : ILLMClient {
-    private readonly ILLMClient _inner;
+internal sealed class LoggingLlmClient : ILlmClient {
+    private readonly ILlmClient _inner;
     private readonly MarkdownSessionLogger _logger;
     private readonly Func<string> _modelNameProvider;
 
-    public LoggingLlmClient(ILLMClient inner, MarkdownSessionLogger logger, Func<string> modelNameProvider) {
+    public LoggingLlmClient(ILlmClient inner, MarkdownSessionLogger logger, Func<string> modelNameProvider) {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _modelNameProvider = modelNameProvider ?? throw new ArgumentNullException(nameof(modelNameProvider));
