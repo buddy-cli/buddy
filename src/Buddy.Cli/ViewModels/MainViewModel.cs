@@ -1,20 +1,28 @@
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Windows.Input;
 using Buddy.Cli.AgentRuntime;
 using Buddy.Cli.Services;
-using Buddy.Cli.Views;
 using Buddy.Core.Configuration;
 using ReactiveUI;
 using ReactiveUI.SourceGenerators;
-using Terminal.Gui.App;
 
 namespace Buddy.Cli.ViewModels;
 
 public partial class MainViewModel : ReactiveObject {
     private readonly IAgentService _agentService;
     private readonly BuddyOptions _options;
-    private readonly IApplication _app;
     private CancellationTokenSource? _cts;
+
+    /// <summary>
+    /// Interaction to request application exit. View handles the actual shutdown.
+    /// </summary>
+    public Interaction<Unit, Unit> RequestExit { get; } = new();
+
+    /// <summary>
+    /// Interaction to show the model selection dialog. View handles dialog display.
+    /// </summary>
+    public Interaction<ModelSelectionDialogViewModel, ModelSelectionResult?> ShowModelDialog { get; } = new();
 
     [Reactive]
     private string _version = string.Empty;
@@ -37,10 +45,9 @@ public partial class MainViewModel : ReactiveObject {
 
     public ICommand SubmitCommand { get; }
 
-    public MainViewModel(EnvironmentLoader environmentLoader, IAgentService agentService, BuddyOptions options, IApplication app) {
+    public MainViewModel(EnvironmentLoader environmentLoader, IAgentService agentService, BuddyOptions options) {
         _agentService = agentService;
         _options = options;
-        _app = app;
         
         Version = environmentLoader.Environment.Version;
         WorkingDirectory = environmentLoader.Environment.WorkingDirectory;
@@ -130,18 +137,17 @@ public partial class MainViewModel : ReactiveObject {
         
         switch (command) {
             case "exit":
-            case "quit":
-                _app.RequestStop();
+                RequestExit.Handle(Unit.Default).Subscribe();
                 return true;
             case "model":
-                ExecuteModelCommand();
+                ExecuteModelCommandAsync();
                 return true;
             default:
                 return false;
         }
     }
 
-    private void ExecuteModelCommand() {
+    private async void ExecuteModelCommandAsync() {
         InputText = string.Empty;
         
         var dialogViewModel = new ModelSelectionDialogViewModel(_options.Providers);
@@ -149,10 +155,8 @@ public partial class MainViewModel : ReactiveObject {
             return;
         }
 
-        using var dialog = new ModelSelectionDialogView(dialogViewModel);
-        _app.Run(dialog);
+        var result = await ShowModelDialog.Handle(dialogViewModel);
         
-        var result = dialog.Result;
         if (result is not null) {
             _agentService.ChangeModel(result.Provider, result.Model);
             

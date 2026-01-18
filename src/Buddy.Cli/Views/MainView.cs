@@ -1,3 +1,4 @@
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Buddy.Cli.ViewModels;
@@ -27,6 +28,7 @@ public class MainView : Window, IViewFor<MainViewModel> {
     private const int FooterHeight = 1;
     private const int SlashCommandsHeight = 8;
 
+    private readonly IApplication _app;
     private readonly CompositeDisposable _disposable = [];
     private readonly Label _banner;
     private readonly TextView _input;
@@ -44,8 +46,9 @@ public class MainView : Window, IViewFor<MainViewModel> {
 
     public MainViewModel? ViewModel { get; set; }
 
-    public MainView(MainViewModel viewModel) {
+    public MainView(MainViewModel viewModel, IApplication app) {
         ViewModel = viewModel;
+        _app = app;
         Title = $"Buddy - {Application.QuitKey} to Exit";
 
         _banner = new Label { Text = BannerText, X = 0, Y = 0 };
@@ -214,6 +217,18 @@ public class MainView : Window, IViewFor<MainViewModel> {
                 }
             })
             .DisposeWith(_disposable);
+
+        // Register interaction handlers
+        ViewModel.RequestExit.RegisterHandler(context => {
+            _app.RequestStop();
+            context.SetOutput(Unit.Default);
+        }).DisposeWith(_disposable);
+
+        ViewModel.ShowModelDialog.RegisterHandler(context => {
+            using var dialog = new ModelSelectionDialogView(context.Input);
+            _app.Run(dialog);
+            context.SetOutput(dialog.Result);
+        }).DisposeWith(_disposable);
 
         _input.SetFocus();
     }
