@@ -17,9 +17,12 @@ var environmentLoader = tempProvider.GetRequiredService<EnvironmentLoader>();
 var options = BuddyOptionsLoader.Load(environmentLoader.Environment.WorkingDirectory, args);
 
 services.AddBuddyCore(options);
-var serviceProvider = services.BuildServiceProvider();
 
 using IApplication app = Application.Create().Init();
+services.AddSingleton(app);
+
+var serviceProvider = services.BuildServiceProvider();
+
 RxApp.MainThreadScheduler = new TerminalScheduler(app);
 RxApp.TaskpoolScheduler = TaskPoolScheduler.Default;
 

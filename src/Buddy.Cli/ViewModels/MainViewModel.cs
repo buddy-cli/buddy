@@ -2,14 +2,18 @@ using System.Reactive.Linq;
 using System.Windows.Input;
 using Buddy.Cli.AgentRuntime;
 using Buddy.Cli.Services;
+using Buddy.Cli.Views;
 using Buddy.Core.Configuration;
 using ReactiveUI;
 using ReactiveUI.SourceGenerators;
+using Terminal.Gui.App;
 
 namespace Buddy.Cli.ViewModels;
 
 public partial class MainViewModel : ReactiveObject {
     private readonly IAgentService _agentService;
+    private readonly BuddyOptions _options;
+    private readonly IApplication _app;
     private CancellationTokenSource? _cts;
 
     [Reactive]
@@ -33,8 +37,10 @@ public partial class MainViewModel : ReactiveObject {
 
     public ICommand SubmitCommand { get; }
 
-    public MainViewModel(EnvironmentLoader environmentLoader, IAgentService agentService, BuddyOptions options) {
+    public MainViewModel(EnvironmentLoader environmentLoader, IAgentService agentService, BuddyOptions options, IApplication app) {
         _agentService = agentService;
+        _options = options;
+        _app = app;
         
         Version = environmentLoader.Environment.Version;
         WorkingDirectory = environmentLoader.Environment.WorkingDirectory;
@@ -108,5 +114,55 @@ public partial class MainViewModel : ReactiveObject {
 
     public void CancelCurrentOperation() {
         _cts?.Cancel();
+    }
+
+    /// <summary>
+    /// Attempts to execute the current slash command.
+    /// Returns true if a command was executed, false otherwise.
+    /// </summary>
+    public bool TryExecuteSlashCommand() {
+        var input = InputText.Trim();
+        if (!input.StartsWith("/")) {
+            return false;
+        }
+
+        var command = input.TrimStart('/').Split(' ')[0].ToLowerInvariant();
+        
+        switch (command) {
+            case "exit":
+            case "quit":
+                _app.RequestStop();
+                return true;
+            case "model":
+                ExecuteModelCommand();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void ExecuteModelCommand() {
+        InputText = string.Empty;
+        
+        var dialogViewModel = new ModelSelectionDialogViewModel(_options.Providers);
+        if (!dialogViewModel.HasItems) {
+            return;
+        }
+
+        using var dialog = new ModelSelectionDialogView(dialogViewModel);
+        _app.Run(dialog);
+        
+        var result = dialog.Result;
+        if (result is not null) {
+            _agentService.ChangeModel(result.Provider, result.Model);
+            
+            var modelDisplayName = string.IsNullOrWhiteSpace(result.Model.Name) 
+                ? result.Model.System 
+                : result.Model.Name;
+            var providerName = string.IsNullOrWhiteSpace(result.Provider.Name) 
+                ? "(unnamed)" 
+                : result.Provider.Name;
+            ModelInfo = $"{modelDisplayName} ({providerName})";
+        }
     }
 }

@@ -1,3 +1,5 @@
+using Buddy.Core.Configuration;
+
 namespace Buddy.Cli.Services;
 
 public interface IAgentService {
@@ -8,4 +10,9 @@ public interface IAgentService {
         CancellationToken cancellationToken);
 
     void ClearHistory();
+    
+    /// <summary>
+    /// Changes the active model used for subsequent turns.
+    /// </summary>
+    void ChangeModel(LlmProviderConfig provider, LlmModelConfig model);
 }

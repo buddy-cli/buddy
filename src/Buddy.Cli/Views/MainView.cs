@@ -147,12 +147,19 @@ public class MainView : Window, IViewFor<MainViewModel> {
             })
             .DisposeWith(_disposable);
 
-        // Handle Enter key for submit
+        // Handle Enter key for submit or slash command execution
         _input
             .Events()
             .KeyDown
             .Where(e => e == Key.Enter)
             .Subscribe(e => {
+                // First try to execute as a slash command
+                if (ViewModel.TryExecuteSlashCommand()) {
+                    e.Handled = true;
+                    return;
+                }
+                
+                // Otherwise, treat as normal message submit
                 if (ViewModel.SubmitCommand.CanExecute(null)) {
                     ViewModel.SubmitCommand.Execute(null);
                     e.Handled = true;

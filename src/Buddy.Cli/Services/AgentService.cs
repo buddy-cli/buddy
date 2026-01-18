@@ -8,7 +8,7 @@ namespace Buddy.Cli.Services;
 
 public sealed class AgentService : IAgentService {
     private readonly BuddyAgent _agent;
-    private readonly ILlmMClient _llmClient;
+    private ILlmMClient _llmClient;
     private readonly string _systemPrompt;
     private readonly string? _projectInstructions;
 
@@ -42,5 +42,9 @@ public sealed class AgentService : IAgentService {
 
     public void ClearHistory() {
         _agent.ClearHistory();
+    }
+
+    public void ChangeModel(LlmProviderConfig provider, LlmModelConfig model) {
+        _llmClient = new OpenAiLlmMClient(provider.ApiKey, model.System, provider.BaseUrl);
     }
 }
