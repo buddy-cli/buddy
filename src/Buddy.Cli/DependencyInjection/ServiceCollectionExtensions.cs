@@ -24,8 +24,6 @@ public static class ServiceCollectionExtensions {
         });
         
         services.AddSingleton<IAgentService, AgentService>();
-        
-        services.AddTransient<ChatApplication>();
 
         return services;
     }

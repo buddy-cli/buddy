@@ -1,14 +1,11 @@
 using System.Reactive;
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
 using Buddy.Core.Agents;
-using Buddy.Core.Application;
 using Buddy.Core.Configuration;
 using Buddy.LLM;
 using ReactiveUI;
 using ReactiveUI.SourceGenerators;
-using Terminal.Gui;
 
 namespace Buddy.Cli.Ui;
 
