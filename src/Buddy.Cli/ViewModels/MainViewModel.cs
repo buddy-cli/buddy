@@ -189,6 +189,14 @@ public partial class MainViewModel : ReactiveObject {
             _options.Providers.Clear();
             _options.Providers.AddRange(result.Providers);
             
+            // Persist provider config to disk
+            try {
+                var configPath = BuddyOptionsLoader.ResolveConfigPath();
+                BuddyOptionsLoader.Save(configPath, new BuddyConfigFile { Providers = result.Providers });
+            } catch {
+                // Silently ignore save failures
+            }
+            
             // Refresh the model info display
             var provider = _options.Providers
                 .FirstOrDefault(p => p.Models.Any(m => m.System == _options.Model));
