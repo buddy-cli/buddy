@@ -18,7 +18,6 @@ namespace Buddy.Cli.Ui;
 /// </summary>
 internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
     private readonly BuddyAgent _agent;
-    private readonly ILLMClientFactory _llmClientFactory;
     private readonly Subject<string> _historyAppended = new();
     private readonly Subject<Unit> _historyClearRequested = new();
     private readonly StringBuilder _historyBuffer = new();
@@ -27,13 +26,11 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
 
     public ChatViewModel(
         BuddyAgent agent,
-        ILLMClientFactory llmClientFactory,
         ILlmMClient initialClient,
         BuddyOptions options,
         string systemPrompt,
         string? projectInstructions) {
         _agent = agent;
-        _llmClientFactory = llmClientFactory;
         CurrentMClient = initialClient;
         Options = options;
         SystemPrompt = systemPrompt;
@@ -260,8 +257,7 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
         if (CurrentMClient is IDisposable disposable) {
             disposable.Dispose();
         }
-
-        CurrentMClient = _llmClientFactory.Create(Options.Model);
+        
         AppendHistory($"\nmodel set to {Options.Model}\n");
     }
 
@@ -272,8 +268,7 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
         if (CurrentMClient is IDisposable disposable) {
             disposable.Dispose();
         }
-
-        CurrentMClient = _llmClientFactory.Create(Options.Model);
+        
         AppendHistory($"\nmodel set to {Options.Model}\n");
     }
 

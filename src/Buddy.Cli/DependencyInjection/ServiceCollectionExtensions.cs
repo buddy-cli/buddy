@@ -4,6 +4,7 @@ using Buddy.Cli.Services;
 using Buddy.Cli.Ui;
 using Buddy.Cli.ViewModels;
 using Buddy.Cli.Views;
+using Buddy.Core.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Buddy.Cli.DependencyInjection;
@@ -14,9 +15,16 @@ public static class ServiceCollectionExtensions {
         services.AddTransient<MainView>();
         services.AddTransient<MainViewModel>();
         
-        services.AddSingleton<IAgentService, AgentService>();
-        
         services.AddSingleton<ISessionLogger, MarkdownSessionLoggerFactory>();
+        
+        services.AddSingleton<ILlmClientProvider>(sp => {
+            var options = sp.GetRequiredService<BuddyOptions>();
+            var sessionLogger = sp.GetRequiredService<ISessionLogger>();
+            var environmentLoader = sp.GetRequiredService<EnvironmentLoader>();
+            return new LlmClientProvider(options, sessionLogger, environmentLoader.Environment.Version);
+        });
+        
+        services.AddSingleton<IAgentService, AgentService>();
 
         services.AddSingleton<ChatLayoutMetrics>(_ => new ChatLayoutMetrics(
             SessionHeaderHeight: 2,

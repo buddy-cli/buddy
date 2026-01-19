@@ -13,7 +13,6 @@ namespace Buddy.Cli;
 internal sealed class ChatApplication {
     private readonly BuddyAgent _agent;
     private readonly ILlmMClient _llmMClient;
-    private readonly ILLMClientFactory _llmClientFactory;
     private readonly BuddyOptions _options;
     private readonly string _version;
     private readonly string _systemPrompt;
@@ -30,14 +29,12 @@ internal sealed class ChatApplication {
         CancellationToken cancellationToken,
         BuddyAgent agent,
         ILlmMClient llmMClient,
-        ILLMClientFactory llmClientFactory,
         BuddyOptions options,
         ChatLayoutMetrics metrics,
         ISessionLogger sessionLogger,
         IReadOnlyList<SlashCommandOption> slashCommands) {
         _agent = agent;
         _llmMClient = llmMClient;
-        _llmClientFactory = llmClientFactory;
         _options = options;
         _version = version;
         _systemPrompt = systemPrompt;
