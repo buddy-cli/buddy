@@ -25,13 +25,7 @@ public static class ServiceCollectionExtensions {
         });
         
         services.AddSingleton<IAgentService, AgentService>();
-
-        services.AddSingleton<ChatLayoutMetrics>(_ => new ChatLayoutMetrics(
-            SessionHeaderHeight: 2,
-            StageHeight: 1,
-            InfoLayerHeight: 1,
-            FooterHeight: 2));
-
+        
         services.AddSingleton<IReadOnlyList<SlashCommandOption>>(_ => new List<SlashCommandOption> {
             new() { Command = "help", Description = "Show available commands" },
             new() { Command = "clear", Description = "Clear conversation history" },

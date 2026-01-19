@@ -36,11 +36,7 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
         SystemPrompt = systemPrompt;
         ProjectInstructions = projectInstructions;
 
-        // Computed property: show spinner when stage is active
-        _showSpinnerHelper = this.WhenAnyValue(x => x.CurrentStage)
-            .Select(stage => stage != "Idle" && stage != "Done" && stage != "Canceled" && stage != "Error")
-            .ToProperty(this, x => x.ShowSpinner);
-
+        
         // Computed property: can send when not in-flight and input is not empty
         var canSend = this.WhenAnyValue(
             x => x.TurnInFlight,
@@ -110,19 +106,7 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
     public BuddyOptions Options { get; }
     public string SystemPrompt { get; }
     public string? ProjectInstructions { get; }
-
-    /// <summary>Observable stream of text appended to history.</summary>
-    public IObservable<string> HistoryAppended => _historyAppended.AsObservable();
-
-    /// <summary>Observable that signals when history should be cleared.</summary>
-    public IObservable<Unit> HistoryClearRequested => _historyClearRequested.AsObservable();
-
-    /// <summary>Gets the full history buffer content.</summary>
-    public string HistoryContent => _historyBuffer.ToString();
-
-    /// <summary>Whether the history has any content.</summary>
-    public bool HasHistory => _historyBuffer.Length > 0;
-
+    
     #endregion
 
     #region Command Implementations
@@ -228,7 +212,6 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
                 ShowProviderDialogCommand.Execute().Subscribe();
                 return true;
             case "/exit":
-            case "/quit":
                 ExecuteExit();
                 return true;
             default:
@@ -238,41 +221,13 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
     }
 
     #endregion
-
-    #region Helper Methods
+    
 
     private void AppendHistory(string text) {
         _historyBuffer.Append(text);
         _historyAppended.OnNext(text);
     }
-
-    public void UpdateModel(int providerIndex, int modelIndex) {
-        var provider = Options.Providers[providerIndex];
-        var model = provider.Models[modelIndex];
-
-        Options.Model = model.System;
-        Options.BaseUrl = provider.BaseUrl;
-        Options.ApiKey = provider.ApiKey;
-
-        if (CurrentMClient is IDisposable disposable) {
-            disposable.Dispose();
-        }
-        
-        AppendHistory($"\nmodel set to {Options.Model}\n");
-    }
-
-    public void UpdateProviders(List<LlmProviderConfig> updatedProviders) {
-        Options.Providers = updatedProviders;
-        BuddyOptionsLoader.ApplyPrimaryProviderDefaults(Options);
-
-        if (CurrentMClient is IDisposable disposable) {
-            disposable.Dispose();
-        }
-        
-        AppendHistory($"\nmodel set to {Options.Model}\n");
-    }
-
-    #endregion
+    
 
     public void Dispose() {
         if (_disposed) {
