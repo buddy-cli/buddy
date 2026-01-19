@@ -1,7 +1,6 @@
 using Buddy.Cli.AgentRuntime;
 using Buddy.Cli.Logging;
 using Buddy.Cli.Services;
-using Buddy.Cli.Ui;
 using Buddy.Cli.ViewModels;
 using Buddy.Cli.Views;
 using Buddy.Core.Configuration;
@@ -26,15 +25,6 @@ public static class ServiceCollectionExtensions {
         
         services.AddSingleton<IAgentService, AgentService>();
         
-        services.AddSingleton<IReadOnlyList<SlashCommandOption>>(_ => new List<SlashCommandOption> {
-            new() { Command = "help", Description = "Show available commands" },
-            new() { Command = "clear", Description = "Clear conversation history" },
-            new() { Command = "model", Description = "Select model for next turns" },
-            new() { Command = "provider", Description = "Edit provider configuration" },
-            new() { Command = "exit", Description = "Exit the application" },
-            new() { Command = "quit", Description = "Exit the application" }
-        });
-
         services.AddTransient<ChatApplication>();
 
         return services;

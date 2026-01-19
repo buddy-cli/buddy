@@ -33,17 +33,7 @@ internal sealed partial class ChatViewModel : ReactiveObject, IDisposable {
         _agent = agent;
         CurrentMClient = initialClient;
         Options = options;
-        SystemPrompt = systemPrompt;
-        ProjectInstructions = projectInstructions;
 
-        
-        // Computed property: can send when not in-flight and input is not empty
-        var canSend = this.WhenAnyValue(
-            x => x.TurnInFlight,
-            x => x.InputText,
-            (inFlight, text) => !inFlight && !string.IsNullOrWhiteSpace(text));
-
-        SendCommand = ReactiveCommand.CreateFromTask(ExecuteSendAsync, canSend);
         CancelCommand = ReactiveCommand.Create(ExecuteCancel, this.WhenAnyValue(x => x.TurnInFlight));
         ClearCommand = ReactiveCommand.Create(ExecuteClear);
         ExitCommand = ReactiveCommand.Create(ExecuteExit);

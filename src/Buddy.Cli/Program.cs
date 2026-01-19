@@ -28,25 +28,3 @@ RxApp.TaskpoolScheduler = TaskPoolScheduler.Default;
 
 using var mainView = serviceProvider.GetRequiredService<MainView>();
 app.Run(mainView);
-// var builder = Host.CreateApplicationBuilder(args);
-// builder.Services.AddBuddyCore(options);
-// builder.Services.AddBuddyCli();
-// using var host = builder.Build();
-//
-//
-// using var cancellationTokenSource = new CancellationTokenSource();
-// ConsoleCancelEventHandler? cancelHandler = (_, eventArgs) => {
-//     eventArgs.Cancel = true;
-//     cancellationTokenSource.Cancel();
-// };
-// Console.CancelKeyPress += cancelHandler;
-//
-// var chatApplication = await new ChatApplicationFactory(host.Services).Create(
-//     environment,
-//     options,
-//     cancellationTokenSource.Token);
-//
-// var exitCode = await chatApplication.RunAsync();
-//
-// Console.CancelKeyPress -= cancelHandler;
-// return exitCode;

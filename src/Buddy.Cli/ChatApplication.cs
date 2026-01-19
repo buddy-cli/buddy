@@ -11,40 +11,7 @@ using Terminal.Gui;
 namespace Buddy.Cli;
 
 internal sealed class ChatApplication {
-    private readonly BuddyAgent _agent;
-    private readonly ILlmMClient _llmMClient;
-    private readonly BuddyOptions _options;
-    private readonly string _version;
-    private readonly string _systemPrompt;
-    private readonly string? _projectInstructions;
-    private readonly ChatLayoutMetrics _metrics;
-    private readonly ISessionLogger _sessionLogger;
-    private readonly IReadOnlyList<SlashCommandOption> _slashCommands;
-    private readonly CancellationToken _cancellationToken;
-
-    public ChatApplication(
-        string version,
-        string systemPrompt,
-        string? projectInstructions,
-        CancellationToken cancellationToken,
-        BuddyAgent agent,
-        ILlmMClient llmMClient,
-        BuddyOptions options,
-        ChatLayoutMetrics metrics,
-        ISessionLogger sessionLogger,
-        IReadOnlyList<SlashCommandOption> slashCommands) {
-        _agent = agent;
-        _llmMClient = llmMClient;
-        _options = options;
-        _version = version;
-        _systemPrompt = systemPrompt;
-        _projectInstructions = projectInstructions;
-        _metrics = metrics;
-        _sessionLogger = sessionLogger;
-        _slashCommands = slashCommands;
-        _cancellationToken = cancellationToken;
-    }
-
+    
     // public Task<int> RunAsync() {
     //     // Create logging client wrapper
     //     var logger = _sessionLogger.Create(_version, _options.Model);
