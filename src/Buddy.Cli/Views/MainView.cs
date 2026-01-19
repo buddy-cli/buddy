@@ -230,6 +230,12 @@ public class MainView : Window, IViewFor<MainViewModel> {
             context.SetOutput(dialog.Result);
         }).DisposeWith(_disposable);
 
+        ViewModel.ShowProviderDialog.RegisterHandler(context => {
+            using var dialog = new ProviderConfigDialogView(context.Input, _app);
+            _app.Run(dialog);
+            context.SetOutput(dialog.Result);
+        }).DisposeWith(_disposable);
+
         _input.SetFocus();
     }
 

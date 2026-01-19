@@ -24,6 +24,11 @@ public partial class MainViewModel : ReactiveObject {
     /// </summary>
     public Interaction<ModelSelectionDialogViewModel, ModelSelectionResult?> ShowModelDialog { get; } = new();
 
+    /// <summary>
+    /// Interaction to show the provider configuration dialog. View handles dialog display.
+    /// </summary>
+    public Interaction<ProviderConfigDialogViewModel, ProviderConfigResult?> ShowProviderDialog { get; } = new();
+
     [Reactive]
     private string _version = string.Empty;
 
@@ -142,6 +147,9 @@ public partial class MainViewModel : ReactiveObject {
             case "model":
                 ExecuteModelCommandAsync();
                 return true;
+            case "provider":
+                ExecuteProviderCommandAsync();
+                return true;
             default:
                 return false;
         }
@@ -166,6 +174,26 @@ public partial class MainViewModel : ReactiveObject {
             var providerName = string.IsNullOrWhiteSpace(result.Provider.Name) 
                 ? "(unnamed)" 
                 : result.Provider.Name;
+            ModelInfo = $"{modelDisplayName} ({providerName})";
+        }
+    }
+
+    private async void ExecuteProviderCommandAsync() {
+        InputText = string.Empty;
+        
+        var dialogViewModel = new ProviderConfigDialogViewModel(_options.Providers);
+
+        var result = await ShowProviderDialog.Handle(dialogViewModel);
+        
+        if (result is not null) {
+            _options.Providers.Clear();
+            _options.Providers.AddRange(result.Providers);
+            
+            // Refresh the model info display
+            var provider = _options.Providers
+                .FirstOrDefault(p => p.Models.Any(m => m.System == _options.Model));
+            var providerName = provider?.Name ?? "Unknown";
+            var modelDisplayName = provider?.Models.FirstOrDefault(m => m.System == _options.Model)?.Name ?? _options.Model;
             ModelInfo = $"{modelDisplayName} ({providerName})";
         }
     }
