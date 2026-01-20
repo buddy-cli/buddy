@@ -73,6 +73,9 @@ public class ModelSelectionDialogView : Dialog<ModelSelectionResult?>, IViewFor<
             })
             .DisposeWith(_disposable);
 
+        // Handle Enter key on list item as accept
+        _listView.Accepting += OnSelectClicked;
+
         _listView.SelectedItem = 0;
     }
 
