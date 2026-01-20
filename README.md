@@ -26,24 +26,52 @@ It is **not** a production-ready agent and makes trade-offs for simplicity and h
   - `grep`
   - `run_terminal`
 - Slash commands (handled locally, not sent to the LLM):
-  - `/help`, `/clear`, `/model <name>`, `/exit`, `/quit`
+  - `/clear` — clear chat history
+  - `/model` — select AI model
+  - `/provider` — configure LLM providers
+  - `/exit` — exit Buddy
 - Instruction loading (nearest wins while traversing up from working dir):
   - `AGENTS.md`
 
 ## Configuration
 
-Buddy reads configuration from environment variables (and `.env` for local dev):
+Buddy reads configuration from a JSON config file at `~/.buddy/config.json`. The file is created automatically on first run.
 
-- `BUDDY_API_KEY` — API key for an OpenAI-compatible endpoint (optional for local gateways)
-- `BUDDY_MODEL` — model name (e.g., `gpt-4o-mini`)
-- `BUDDY_BASE_URL` — endpoint base URL (e.g., `https://api.openai.com/v1` or `http://localhost:11434/v1`)
+### Config file structure
 
-A `.env.example` is included. For local dev:
+```json
+{
+  "Providers": [
+    {
+      "Name": "OpenAI",
+      "BaseUrl": "https://api.openai.com/v1",
+      "ApiKey": "sk-...",
+      "Models": [
+        { "Name": "GPT-4o", "System": "gpt-4o" },
+        { "Name": "GPT-4o Mini", "System": "gpt-4o-mini" }
+      ]
+    },
+    {
+      "Name": "Ollama",
+      "BaseUrl": "http://localhost:11434/v1",
+      "ApiKey": "",
+      "Models": [
+        { "Name": "Llama 3", "System": "llama3" }
+      ]
+    }
+  ]
+}
+```
 
-1. Copy `.env.example` to `.env`
-2. Fill in values
+- **Providers** — list of LLM provider configurations
+  - **Name** — display name for the provider
+  - **BaseUrl** — OpenAI-compatible API endpoint
+  - **ApiKey** — API key (can be empty for local endpoints like Ollama)
+  - **Models** — list of models available from this provider
+    - **Name** — display name for the model
+    - **System** — model identifier sent to the API
 
-Note: `.env` is loaded with **no clobber**, meaning real environment variables override `.env`.
+The first provider and its first model are used as defaults. You can switch providers and models at runtime using slash commands.
 
 ## Run locally
 
