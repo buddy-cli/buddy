@@ -21,6 +21,7 @@ public class ProviderConfigDialogView : Dialog<ProviderConfigResult?>, IViewFor<
     private readonly ListView _listView;
     private readonly Label _errorLabel;
     private readonly IApplication _app;
+    private readonly IDialogViewModelFactory _dialogFactory;
 
     object? IViewFor.ViewModel {
         get => ViewModel;
@@ -29,9 +30,13 @@ public class ProviderConfigDialogView : Dialog<ProviderConfigResult?>, IViewFor<
 
     public ProviderConfigDialogViewModel? ViewModel { get; set; }
 
-    public ProviderConfigDialogView(ProviderConfigDialogViewModel viewModel, IApplication app) {
+    public ProviderConfigDialogView(
+        ProviderConfigDialogViewModel viewModel,
+        IApplication app,
+        IDialogViewModelFactory dialogFactory) {
         ViewModel = viewModel;
         _app = app;
+        _dialogFactory = dialogFactory;
 
         Title = "Provider Configuration";
         Width = Dim.Percent(80);
@@ -128,8 +133,8 @@ public class ProviderConfigDialogView : Dialog<ProviderConfigResult?>, IViewFor<
     private void OnAddClicked(object? sender, CommandEventArgs e) {
         e.Handled = true;
         
-        var editorVm = new ProviderEditorDialogViewModel(null);
-        using var editorDialog = new ProviderEditorDialogView(editorVm, _app);
+        var editorVm = _dialogFactory.CreateProviderEditor(null);
+        using var editorDialog = new ProviderEditorDialogView(editorVm, _app, _dialogFactory);
         _app.Run(editorDialog);
 
         if (editorDialog.Result is { } provider) {
@@ -147,8 +152,8 @@ public class ProviderConfigDialogView : Dialog<ProviderConfigResult?>, IViewFor<
             return;
         }
 
-        var editorVm = new ProviderEditorDialogViewModel(selected);
-        using var editorDialog = new ProviderEditorDialogView(editorVm, _app);
+        var editorVm = _dialogFactory.CreateProviderEditor(selected);
+        using var editorDialog = new ProviderEditorDialogView(editorVm, _app, _dialogFactory);
         _app.Run(editorDialog);
 
         if (editorDialog.Result is { } provider) {

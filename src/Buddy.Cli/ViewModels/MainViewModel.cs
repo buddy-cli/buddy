@@ -12,6 +12,7 @@ namespace Buddy.Cli.ViewModels;
 public partial class MainViewModel : ReactiveObject {
     private readonly IAgentService _agentService;
     private readonly BuddyOptions _options;
+    private readonly IDialogViewModelFactory _dialogFactory;
     private CancellationTokenSource? _cts;
 
     /// <summary>
@@ -50,9 +51,14 @@ public partial class MainViewModel : ReactiveObject {
 
     public ICommand SubmitCommand { get; }
 
-    public MainViewModel(EnvironmentLoader environmentLoader, IAgentService agentService, BuddyOptions options) {
+    public MainViewModel(
+        EnvironmentLoader environmentLoader,
+        IAgentService agentService,
+        BuddyOptions options,
+        IDialogViewModelFactory dialogFactory) {
         _agentService = agentService;
         _options = options;
+        _dialogFactory = dialogFactory;
         
         Version = environmentLoader.Environment.Version;
         WorkingDirectory = environmentLoader.Environment.WorkingDirectory;
@@ -158,7 +164,7 @@ public partial class MainViewModel : ReactiveObject {
     private async void ExecuteModelCommandAsync() {
         InputText = string.Empty;
         
-        var dialogViewModel = new ModelSelectionDialogViewModel(_options.Providers);
+        var dialogViewModel = _dialogFactory.CreateModelSelection(_options.Providers);
         if (!dialogViewModel.HasItems) {
             return;
         }
@@ -181,7 +187,7 @@ public partial class MainViewModel : ReactiveObject {
     private async void ExecuteProviderCommandAsync() {
         InputText = string.Empty;
         
-        var dialogViewModel = new ProviderConfigDialogViewModel(_options.Providers);
+        var dialogViewModel = _dialogFactory.CreateProviderConfig(_options.Providers);
 
         var result = await ShowProviderDialog.Handle(dialogViewModel);
         

@@ -29,6 +29,7 @@ public class MainView : Window, IViewFor<MainViewModel> {
     private const int SlashCommandsHeight = 8;
 
     private readonly IApplication _app;
+    private readonly IDialogViewModelFactory _dialogFactory;
     private readonly CompositeDisposable _disposable = [];
     private readonly Label _banner;
     private readonly TextView _input;
@@ -46,9 +47,10 @@ public class MainView : Window, IViewFor<MainViewModel> {
 
     public MainViewModel? ViewModel { get; set; }
 
-    public MainView(MainViewModel viewModel, IApplication app) {
+    public MainView(MainViewModel viewModel, IApplication app, IDialogViewModelFactory dialogFactory) {
         ViewModel = viewModel;
         _app = app;
+        _dialogFactory = dialogFactory;
         Title = $"Buddy - {Application.QuitKey} to Exit";
 
         _banner = new Label { Text = BannerText, X = 0, Y = 0 };
@@ -231,7 +233,7 @@ public class MainView : Window, IViewFor<MainViewModel> {
         }).DisposeWith(_disposable);
 
         ViewModel.ShowProviderDialog.RegisterHandler(context => {
-            using var dialog = new ProviderConfigDialogView(context.Input, _app);
+            using var dialog = new ProviderConfigDialogView(context.Input, _app, _dialogFactory);
             _app.Run(dialog);
             context.SetOutput(dialog.Result);
         }).DisposeWith(_disposable);

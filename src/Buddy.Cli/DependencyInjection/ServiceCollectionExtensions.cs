@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions {
         services.AddTransient<MainView>();
         services.AddTransient<MainViewModel>();
         
+        services.AddSingleton<IDialogViewModelFactory, DialogViewModelFactory>();
         services.AddSingleton<ISessionLogger, MarkdownSessionLoggerFactory>();
         
         services.AddSingleton<ILlmClientProvider>(sp => {

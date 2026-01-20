@@ -24,6 +24,7 @@ public class ProviderEditorDialogView : Dialog<LlmProviderConfig?>, IViewFor<Pro
     private readonly ListView _modelsView;
     private readonly Label _errorLabel;
     private readonly IApplication _app;
+    private readonly IDialogViewModelFactory _dialogFactory;
 
     object? IViewFor.ViewModel {
         get => ViewModel;
@@ -32,9 +33,13 @@ public class ProviderEditorDialogView : Dialog<LlmProviderConfig?>, IViewFor<Pro
 
     public ProviderEditorDialogViewModel? ViewModel { get; set; }
 
-    public ProviderEditorDialogView(ProviderEditorDialogViewModel viewModel, IApplication app) {
+    public ProviderEditorDialogView(
+        ProviderEditorDialogViewModel viewModel,
+        IApplication app,
+        IDialogViewModelFactory dialogFactory) {
         ViewModel = viewModel;
         _app = app;
+        _dialogFactory = dialogFactory;
 
         Title = viewModel.IsNew ? "Add Provider" : "Edit Provider";
         Width = Dim.Percent(70);
@@ -178,7 +183,7 @@ public class ProviderEditorDialogView : Dialog<LlmProviderConfig?>, IViewFor<Pro
     private void OnAddModelClicked(object? sender, CommandEventArgs e) {
         e.Handled = true;
 
-        var editorVm = new ModelEditorDialogViewModel(null);
+        var editorVm = _dialogFactory.CreateModelEditor(null);
         using var editorDialog = new ModelEditorDialogView(editorVm);
         _app.Run(editorDialog);
 
@@ -197,7 +202,7 @@ public class ProviderEditorDialogView : Dialog<LlmProviderConfig?>, IViewFor<Pro
             return;
         }
 
-        var editorVm = new ModelEditorDialogViewModel(selected);
+        var editorVm = _dialogFactory.CreateModelEditor(selected);
         using var editorDialog = new ModelEditorDialogView(editorVm);
         _app.Run(editorDialog);
 
