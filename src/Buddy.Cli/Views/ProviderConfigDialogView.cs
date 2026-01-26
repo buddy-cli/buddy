@@ -132,7 +132,7 @@ public class ProviderConfigDialogView : Dialog<ProviderConfigResult?>, IViewFor<
 
     private void OnAddClicked(object? sender, CommandEventArgs e) {
         e.Handled = true;
-        
+
         var editorVm = _dialogFactory.CreateProviderEditor(null);
         using var editorDialog = new ProviderEditorDialogView(editorVm, _app, _dialogFactory);
         _app.Run(editorDialog);

@@ -12,7 +12,7 @@ namespace Buddy.Cli.Views;
 
 public class AgentLogView : FrameView, IViewFor<AgentLogViewModel> {
     private const int StageRowHeight = 1;
-    
+
     private readonly CompositeDisposable _disposable = [];
     private readonly SpinnerView _spinner;
     private readonly Label _stageLabel;
@@ -86,7 +86,7 @@ public class AgentLogView : FrameView, IViewFor<AgentLogViewModel> {
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ => UpdateLogText())
             .DisposeWith(_disposable);
-        
+
         // Also subscribe to property changes on the ViewModel (for streaming text updates)
         viewModel.Changed
             .Throttle(TimeSpan.FromMilliseconds(50))
@@ -112,7 +112,7 @@ public class AgentLogView : FrameView, IViewFor<AgentLogViewModel> {
         }
 
         _logTextView.Text = sb.ToString();
-        
+
         // Scroll to bottom
         _logTextView.MoveEnd();
     }

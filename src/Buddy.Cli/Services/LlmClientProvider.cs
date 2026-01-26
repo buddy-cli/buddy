@@ -27,7 +27,8 @@ internal sealed class LlmClientProvider : ILlmClientProvider, IDisposable {
         if (provider is not null) {
             var model = provider.Models.First(m => m.System == options.Model);
             InitializeClient(provider, model);
-        } else if (!string.IsNullOrEmpty(options.Model)) {
+        }
+        else if (!string.IsNullOrEmpty(options.Model)) {
             // Fallback: use options directly (legacy single-provider config)
             var fallbackProvider = new LlmProviderConfig {
                 ApiKey = options.ApiKey,
@@ -38,7 +39,7 @@ internal sealed class LlmClientProvider : ILlmClientProvider, IDisposable {
         }
     }
 
-    public ILlmMClient Current => _currentClient 
+    public ILlmMClient Current => _currentClient
         ?? throw new InvalidOperationException("No model has been configured. Call SetModel first.");
 
     public string CurrentModelName { get; private set; } = string.Empty;

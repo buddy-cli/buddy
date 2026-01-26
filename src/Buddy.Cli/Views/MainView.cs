@@ -163,7 +163,7 @@ public class MainView : Window, IViewFor<MainViewModel> {
                     e.Handled = true;
                     return;
                 }
-                
+
                 // Otherwise, treat as normal message submit
                 if (ViewModel.SubmitCommand.CanExecute(null)) {
                     ViewModel.SubmitCommand.Execute(null);
@@ -208,7 +208,8 @@ public class MainView : Window, IViewFor<MainViewModel> {
                     // Slash commands appear above input in agent mode
                     _slashCommandsView.Y = Pos.AnchorEnd(InputHeight + ModelInfoHeight + FooterHeight + SlashCommandsHeight);
                     _agentLogView.Visible = true;
-                } else {
+                }
+                else {
                     // Start mode: show banner, input below banner, hide agent log
                     _banner.Visible = true;
                     _input.Y = BannerHeight;

@@ -134,7 +134,7 @@ public class ProviderEditorDialogView : Dialog<LlmProviderConfig?>, IViewFor<Pro
             modelsLabel, _modelsView,
             addModelButton, editModelButton, removeModelButton,
             _errorLabel);
-        
+
         AddButton(saveButton);
         AddButton(cancelButton);
 

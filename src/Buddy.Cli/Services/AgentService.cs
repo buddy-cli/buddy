@@ -19,7 +19,7 @@ public sealed class AgentService : IAgentService {
         _agent = agent;
         _clientProvider = clientProvider;
         _systemPrompt = systemPromptBuilder.Build(options, DateTimeOffset.Now, Environment.OSVersion.ToString());
-        
+
         // Load project instructions synchronously for now (could be improved)
         _projectInstructions = ProjectInstructionsLoader.Load(options.WorkingDirectory).GetAwaiter().GetResult();
     }

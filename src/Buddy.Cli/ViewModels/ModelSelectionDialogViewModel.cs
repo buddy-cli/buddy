@@ -29,7 +29,7 @@ public partial class ModelSelectionDialogViewModel : ReactiveObject {
     public ModelSelectionDialogViewModel(IReadOnlyList<LlmProviderConfig> providers) {
         _providers = providers;
         Items = new ReadOnlyObservableCollection<string>(_items);
-        
+
         BuildEntries();
     }
 

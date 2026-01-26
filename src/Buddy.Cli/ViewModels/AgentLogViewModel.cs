@@ -26,10 +26,11 @@ public partial class AgentLogViewModel : ReactiveObject {
             _currentAssistantEntry = new LogEntry(LogEntryType.AssistantText, text);
             Entries.Add(_currentAssistantEntry);
             CurrentStage = "Responding...";
-        } else {
+        }
+        else {
             _currentAssistantEntry.AppendContent(text);
         }
-        
+
         // Notify that the collection changed (for UI refresh of streaming text)
         this.RaisePropertyChanged(nameof(Entries));
     }

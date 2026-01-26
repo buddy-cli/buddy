@@ -10,7 +10,7 @@ public interface IAgentService {
         CancellationToken cancellationToken);
 
     void ClearHistory();
-    
+
     /// <summary>
     /// Changes the active model used for subsequent turns.
     /// </summary>

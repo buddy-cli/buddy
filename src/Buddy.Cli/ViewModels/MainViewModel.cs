@@ -46,7 +46,7 @@ public partial class MainViewModel : ReactiveObject {
     private string _modelInfo = string.Empty;
 
     public SlashCommandsViewModel SlashCommands { get; }
-    
+
     public AgentLogViewModel AgentLog { get; }
 
     public ICommand SubmitCommand { get; }
@@ -59,10 +59,10 @@ public partial class MainViewModel : ReactiveObject {
         _agentService = agentService;
         _options = options;
         _dialogFactory = dialogFactory;
-        
+
         Version = environmentLoader.Environment.Version;
         WorkingDirectory = environmentLoader.Environment.WorkingDirectory;
-        
+
         // Find the provider and model display name for the current system model
         var provider = options.Providers
             .FirstOrDefault(p => p.Models.Any(m => m.System == options.Model));
@@ -76,7 +76,7 @@ public partial class MainViewModel : ReactiveObject {
         // Submit command - only enabled when there's text and not in slash mode
         var canSubmit = this.WhenAnyValue(x => x.InputText)
             .Select(text => !string.IsNullOrWhiteSpace(text) && !text.StartsWith("/"));
-        
+
         SubmitCommand = ReactiveCommand.CreateFromTask(SubmitAsync, canSubmit);
 
         // Wire up slash command activation based on input text
@@ -107,7 +107,7 @@ public partial class MainViewModel : ReactiveObject {
         AgentLog.AddUserMessage(userInput);
 
         _cts = new CancellationTokenSource();
-        
+
         try {
             await _agentService.RunTurnAsync(
                 userInput,
@@ -120,9 +120,11 @@ public partial class MainViewModel : ReactiveObject {
                     return Task.CompletedTask;
                 },
                 _cts.Token);
-        } catch (OperationCanceledException) {
+        }
+        catch (OperationCanceledException) {
             // Cancelled by user
-        } finally {
+        }
+        finally {
             AgentLog.IsProcessing = false;
             AgentLog.SetIdle();
             _cts.Dispose();
@@ -145,7 +147,7 @@ public partial class MainViewModel : ReactiveObject {
         }
 
         var command = input.TrimStart('/').Split(' ')[0].ToLowerInvariant();
-        
+
         switch (command) {
             case "exit":
                 RequestExit.Handle(Unit.Default).Subscribe();
@@ -163,22 +165,22 @@ public partial class MainViewModel : ReactiveObject {
 
     private async void ExecuteModelCommandAsync() {
         InputText = string.Empty;
-        
+
         var dialogViewModel = _dialogFactory.CreateModelSelection(_options.Providers);
         if (!dialogViewModel.HasItems) {
             return;
         }
 
         var result = await ShowModelDialog.Handle(dialogViewModel);
-        
+
         if (result is not null) {
             _agentService.ChangeModel(result.Provider, result.Model);
-            
-            var modelDisplayName = string.IsNullOrWhiteSpace(result.Model.Name) 
-                ? result.Model.System 
+
+            var modelDisplayName = string.IsNullOrWhiteSpace(result.Model.Name)
+                ? result.Model.System
                 : result.Model.Name;
-            var providerName = string.IsNullOrWhiteSpace(result.Provider.Name) 
-                ? "(unnamed)" 
+            var providerName = string.IsNullOrWhiteSpace(result.Provider.Name)
+                ? "(unnamed)"
                 : result.Provider.Name;
             ModelInfo = $"{modelDisplayName} ({providerName})";
         }
@@ -186,23 +188,24 @@ public partial class MainViewModel : ReactiveObject {
 
     private async void ExecuteProviderCommandAsync() {
         InputText = string.Empty;
-        
+
         var dialogViewModel = _dialogFactory.CreateProviderConfig(_options.Providers);
 
         var result = await ShowProviderDialog.Handle(dialogViewModel);
-        
+
         if (result is not null) {
             _options.Providers.Clear();
             _options.Providers.AddRange(result.Providers);
-            
+
             // Persist provider config to disk
             try {
                 var configPath = BuddyOptionsLoader.ResolveConfigPath();
                 BuddyOptionsLoader.Save(configPath, new BuddyConfigFile { Providers = result.Providers });
-            } catch {
+            }
+            catch {
                 // Silently ignore save failures
             }
-            
+
             // Refresh the model info display
             var provider = _options.Providers
                 .FirstOrDefault(p => p.Models.Any(m => m.System == _options.Model));

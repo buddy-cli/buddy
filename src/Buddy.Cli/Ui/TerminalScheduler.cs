@@ -21,10 +21,10 @@ public class TerminalScheduler : LocalScheduler {
             var cancellation = new CancellationDisposable();
 
             _application?.Invoke((_) => {
-                    if (!cancellation.Token.IsCancellationRequested) {
-                        composite.Add(action(this, state));
-                    }
+                if (!cancellation.Token.IsCancellationRequested) {
+                    composite.Add(action(this, state));
                 }
+            }
             );
             composite.Add(cancellation);
 
